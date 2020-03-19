@@ -46,7 +46,7 @@
 
  ### 5. Test
  >  - 현재 테스트 코드가 스프링을 실행하는 역할을 할 것이라는 것을 **@RunWith** 로 표현
- >  - 지정된 클래스나 문자열을 이용해 필요한 객체들을 스프링 내에 객체로 등록(스프링 빈으로 등록한다),  사용하는 문자열은 **'classpath:'** 나 **'fine:'**을 이용한다. 자동으로 상성된 **root-context.xml의 경로** 를 지정 - **@ContextConfiguration**
+ >  - 지정된 클래스나 문자열을 이용해 필요한 객체들을 스프링 내에 객체로 등록(스프링 빈으로 등록한다),  사용하는 문자열은 **'classpath:'** 나 **'file:'** 을 이용한다. 자동으로 상성된 **root-context.xml의 경로** 를 지정 - **@ContextConfiguration**
  >  - Junit 진행중 ApplicationContext를 만들고 관리하는 작업을 진행, 테스트 별로 객체 생성하더라도 싱글톤 ApplicationContext 를 보장
  ---------
  #### * 중요사항 
@@ -67,3 +67,31 @@
 >   - 여러 개의 인스턴스 변수들 중 특정한 변수에 대해서만 생성자를 작성 -  **@NonNull** 과 **@RequiredArgsConstructor** 
 
 ## **Chapter 03** 스프링과 Oracle Database 연동
+
+### 1. Port 확인 및 변경
+
+>   - 확인 : **select dbms_xdb.gethttpport() from dual;**
+>   - 변경 : **exec dbms_xdb.sethttpport({Port Number});**
+
+### 2. 커넥션 풀
+
+>   - 일반적으로 다수의 사용자를 동시에 처리해야 하는 웹 어플리케이션의 경우 데이터 베이스 연결을 이용할 때는 커넥션풀을 이용.
+>   - Java에서는 DataSource라는 인터페이스를 통해 커넥션 풀을 사용.
+>   - 여러 종류중 최근 유행하는 HikariCP사용(2018년도)
+
+
+## **Chapter 04** MyBatis와 스프링 연동
+
+### 1. MyBatis 관련 라이브러리
+>   - spring-jdbc/spring-tx : 스프링에서 데이터베이스 처리와 트랜잭션 처리(MyBatis 와 유관하므로 반드시 추가)
+>   - mybatis/mybatis-spring : MyBatis 와 스프링 연동용 라이브러리
+
+### 2. SQLSessionFactory
+>   - SQLSession을 통해 Connection을 생성하거나 원하는 SQL을 전달하고, 결과를 리턴 받는 구조로 작성
+>   - SqlSessionFactory를 등록 하는 작업은 SqlSessionFactoryBean을 이용. 패키지명을 확인해보면 MyBatis의 패키지가 아니라 스프링과 연동 작업을 처리하는 mybatis-spring 라이브러리의 클래스임을 알수 있다.
+
+```xml
+<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"></property>
+</bean>
+```
