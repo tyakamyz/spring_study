@@ -4,11 +4,11 @@
 ## **Chapter 01** 개발 환경 설정
 
 
-### 1. Java Configuration 을 하는 경우 필요한 작업
-- web.xml의 파일 삭제 및 스프링 관련 파일 삭제  
++ ### 1. Java Configuration 을 하는 경우 필요한 작업
+	- web.xml의 파일 삭제 및 스프링 관련 파일 삭제  
 (web.xml, servlet-context.xml, root-context.xml)
-- pom.xml의 수정 및 스프링 버전 변경
-- Java 설정 관련 패키지 생성
+	- pom.xml의 수정 및 스프링 버전 변경
+	- Java 설정 관련 패키지 생성
 
 
 ## **Chapter** 02 스프링의 특징과 의존성 주입
