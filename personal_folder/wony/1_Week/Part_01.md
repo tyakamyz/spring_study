@@ -98,3 +98,76 @@
 		<property name="dataSource" ref="dataSource"></property>
 </bean>
 ```
+
++ ### 3. Mapper
+	- SQL을 어떻게 처리할 것인지를 별도의 설정을 분리해 주고, 자동으로 처리되는 방식
+	- XML과 인터페이스 + 어노테이션의 형태로 작성 가능
+
++ #### 3.1 Mppaer 인터페이스
+	
+	```java
+	public interface TimeMapper {
+	
+	@Select("SELECT sysdate FROM dual")
+	public String getTime();
+
+	}
+	```
+
+	- Mapper 작성한 후 MaBatis가 동작할 때 Mapper를 인식할 수 있도록 **root-context.xml**에 추가 설정 필요. 가장 간단한 방식은 **<<mybatis:scan>>** 태그 사용
+
+	- root-context.xml 에 아래 내용 추가
+	```xml
+	<mybatis-spring:scan base-package="org.zerock.mapper"/>
+	```
+	- 지정된 패키지의 모든 MyBatis 관련 어노테이션을 찾아서 처리한다.
+	- Mapper 설정 작업은 각각의 XML이나 Mapper 인터페이스를 설정할 수도 있지만, 매번 너무 번잡하기에 예제는 자동으로 org.zerock.mapper 패키지를 인식하는 방식으로 작성하는 것이 가장 편리하다.
+	- SQL이 복잡하거나 길어지는 경우 어노테이션 보다 XML을 이용하는 방식을 더 선호, MyBatis-Spring의 경우 Mapper 인터페이스와 XML을 동시에 사용 가능
+
++ #### 3.2 Mapper XML
+	- 사용시 XML의 파일 위치와 XML 파일에 지정하는 namespace속성이 중요.
+	- XML 파일 위치의 경우 Mapper 인터페이스가 있는 곳에 같이 작성 하거나, **src/main/resources 구조에 XML을 저장할 폴더를 생성 가능.
+	- XML의 이름 생성 규칙은 별도로 없지만 Mapper 인터페이스와 같은 이름을 갖는 것이 가독성을 높여준다.
+	- XML 파일에는 MyBatis의 XML 매퍼에서 이용하는 태그에 대한 설정이 필요  
+	**(http://www.mybatis.org/mybatis-3/ko/sqlmap-xml.html)** 참조
+	- Mapper 인터페이스와 XML을 인터페이스의 이름과 namespace의 속성값을 가지고 판단, 아래의 경우 메서드 선언은 인터페이스에 존재하고 SQL에 대한 처리는 XML을 이용하는 방식이다.
+	```java
+	package org.zerock.mapper;
+
+	public interface TimeMapper
+	```
+	```xml
+	<mapper namespace = "org.zerock.mapper.TimeMapper">
+	
++ ### 4. log4jdbc-log4j2
+	
+	- 복잡한 형태의 SQL, 입력된 파라미터의 확인 등의 SQL 로그를 제대로 보기위해 설정하는 라이브러리
+	- pom.xml 라이브러리 설정
+	```xml
+	<!-- https://mvnrepository.com/artifact/org.bgee.log4jdbc-log4j2/log4jdbc-log4j2-jdbc4 -->
+		<dependency>
+			<groupId>org.bgee.log4jdbc-log4j2</groupId>
+			<artifactId>log4jdbc-log4j2-jdbc4</artifactId>
+			<version>1.16</version>
+		</dependency>
+	```
+	- src/main/resource 에 log4jdbc.log4j2.properties 파일 추가
+	```properties
+	log4jdbc.spylogdelegator.name=net.sf.log4jdbc.log.slf4j.Slf4jSpyLogDelegator
+	```
+	- JDBC 드라이버와 URL 정보 수정
+	> - 변경 전
+	```xml
+	<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/>
+	<property name="jdbcUrl" value="jdbc:oracle:thin:@localhost:1521:xe"/>
+	```
+
+	> - 변경 후 
+	``` xml
+	<property name="driverClassName" value="net.sf.log4jdbc.sql.jdbcapi.DriverSpy"/>
+		<property name="jdbcUrl" value="jdbc:log4jdbc:oracle:thin:@localhost:1521:xe"/>
+	```
+ - ### 5 로그의 레벨 설정
+	- 테스트 코드가 실핼 될 때의 로그 설정 **src/test/resources** 밑에 **log4j.xml** 을 이용  
+	- 로그 레벨 설정 참고
+	**(https://logging.apache.org/log4j/2.x/manual/customloglevels.html)**		
