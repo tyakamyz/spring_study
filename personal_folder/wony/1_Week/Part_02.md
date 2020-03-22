@@ -44,7 +44,7 @@
     - web.xml은 Tomcat 구동과 관련 된 설정 파일.
     - root-context.xml, servlet-context.xml은 스프링과 관련된 설정 파일.
 
-    >   #### (1). 프로젝트 구동은 web.xml에서 시작. web.xml의 상단에 가장 먼저 구동되는 Context Listener가 등록되있음.
+    #### (1). 프로젝트 구동은 web.xml에서 시작. web.xml의 상단에 가장 먼저 구동되는 Context Listener가 등록되있음.
     ```xml
     <!-- The definition of the Root Spring Container shared by all Servlets and Filters -->
 	<context-param>
@@ -60,9 +60,9 @@
     - < context-param > 에는 root-context.xml의 경로가 설정되어있다.
     - < listener >에는 스프링 MVC의 ContextLoaderListener가 등록되어 있는 것을 볼 수 있다.
     - ContextLoaderListener는 해당 웹 어플리케이션 구동 시 같이 동작하므로 해당 프로젝트를 실행하면 가장 먼저 로그를 출력하면서 기록된다.  
-    >  #### (2) root-context.xml이 처리되면 파일에 있는 빈(Bean) 설정들이 동작하게 된다.
+    #### (2) root-context.xml이 처리되면 파일에 있는 빈(Bean) 설정들이 동작하게 된다.
     - root-context.xml에 정의된 객체(Bean)들은 스프링의 영역(context)안에 생성되고, 객체들 간의 의존성이 처리된다.
-    >   #### (3) root-context.xml이 처리된 후에는 스프링 MVC에서 사용하는 DispatcherServlet이라는 서블릿과 관련된 설정이 동작한다.
+    #### (3) root-context.xml이 처리된 후에는 스프링 MVC에서 사용하는 DispatcherServlet이라는 서블릿과 관련된 설정이 동작한다.
     - org.springframework.web.servlet.DispatcherServlet 클래스는 스프링 MVC의 구조에서 가장 핵심적인 역할을 하는 클래스이다. 내부적으로 웹 관련 처리의 준비작업을 진행하는데 이 때 사용하는 파일이 servlet-context.xml이다.
     - DispatcherServlet에서 XmlWebApplicationContext를 이용해서 servlet-context.xml을 로딩하고 해석하기 시작한다. 이 과정에서 동륵된 객체(Bean)들은 기존에 만들어진 객체(Bean)들과 같이 연동되게 된다.
 
@@ -70,7 +70,7 @@
 
     - **Servlet/JSP**에서는 HttpServletRequest/HttpServletResponse라는 타입의 객체를 이용해 브라우저에게 전송한 정보를 처리하는 방식이다.
     - **스프링 MVC** 경우 이위에 하나의 계층을 더한 형태가 된다.
-    >   - 스프링 MVC을 이용하게 되면 직접적으로 HttpServletRequest/HttpServletResponse 등과 같이 Servlet/Jsp의 API를 사용할 필요성이 현저하게 줄어든다.
+       - 스프링 MVC을 이용하게 되면 직접적으로 HttpServletRequest/HttpServletResponse 등과 같이 Servlet/Jsp의 API를 사용할 필요성이 현저하게 줄어든다.
 
 - ### 8. 모델 2와 스프링 MVC
     - 모델2방식은 **'로직과 화면을 분리'** 하는 스티일의 개발방식
@@ -127,10 +127,10 @@
 ## **Chapter 06** 스프링 MVC의 Controller
 
 - 스프링 MVC를 이용하는 경우 작성되는 Controller의 특징
->   - HttpServletRequest, HttpServletResponse를 거의사용할 필요 없이 필요한 기능 구현
->   - 다양한 타입의 파라미터 처리, 다양한 타입의 리턴 타입 사용 가능
->   - GET 방식, POST 방식 등 전송 방식에 대한 처리를 어노테이션으로 처리 가능
->   - 상속/인터페이스 방식 대신에 어노테이션만으로도 필요한 설정 가능 
+   - HttpServletRequest, HttpServletResponse를 거의사용할 필요 없이 필요한 기능 구현
+   - 다양한 타입의 파라미터 처리, 다양한 타입의 리턴 타입 사용 가능
+   - GET 방식, POST 방식 등 전송 방식에 대한 처리를 어노테이션으로 처리 가능
+   - 상속/인터페이스 방식 대신에 어노테이션만으로도 필요한 설정 가능 
 
 ### 1. @Controller, @RequestMapping
 
@@ -170,8 +170,8 @@ http://localhost:18080/sample/ex02Bean?list[0].name=aaa&list[2].name=bbb
 ```
 
 - Tomcat은 버전에 따라 위아 같은 문자열에서 '[]' 문자를 특수문자로허용하지 않을 수 있다.
->   - javascript의 경우 encodeURLComponent()와 같은 방법으로 해결 가능
->   - 그 외 '[' 는 '%5B' 로 ']'는 '%5D'로 변경해서 사용한다.
+   - javascript의 경우 encodeURLComponent()와 같은 방법으로 해결 가능
+   - 그 외 '[' 는 '%5B' 로 ']'는 '%5D'로 변경해서 사용한다.
 
 ### 4. @RequestParam
 -   스프링은 파라미터의 타입을 보고 객체를 생성하므로 파라미터의 타입은 List<>와같은 **인터페이스** 타입이아닌 실제적인 **클래스** 타입으로 지정한다 ex) ArrayList<> 타입
