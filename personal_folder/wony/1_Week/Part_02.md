@@ -451,8 +451,8 @@ public String handle404(NoHandlerFoundException ex) {
 > - WebConfig.class 설정 추가
 ```java
 @Override
-	protected void customizeRegistration(ServletRegistration.Dynamic registration) {
-		// TODO Auto-generated method stub
-		registration.setInitParameter("throwExceptionIfNoHandlerFound","true");
-	}
+protected void customizeRegistration(ServletRegistration.Dynamic registration) {
+    // TODO Auto-generated method stub
+    registration.setInitParameter("throwExceptionIfNoHandlerFound","true");
+}
 ```
