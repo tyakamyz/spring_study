@@ -74,8 +74,8 @@ root-context.xml
 **- JAVA 기반 설정 -**
 RootConfig.java
 ```
-/**
-	 @Configuration
+
+    @Configuration
     @ComponentScan(basePackages= {"org.zerock.sample"})	
     @MapperScan(basePackages = {"org.zerock.mapper"})
     public class RootConfig {
