@@ -1,0 +1,71 @@
+# **Part 03** 기본적인 웹 게시물 관리
+
+## **Chapter 07** 스프링 MVC 프로젝트의 기본 구성
+
+### 1. 일반적으로 웹 프로젝트는 3-Tier(티어) 방식으로 구성
+    - Presentation Tier(화면 계층)
+    - Business Tier(비즈니스 계층)
+    - Persistence Tier(영속 계층 혹은 데이터 계층)
+
+- Presentation Tier(화면계층)
+    - 화면에 보여주는 기술을 사용하는 영역. Servlet/JSP나 스프링 MVC가 담당하는 영역
+    - 프로젝트 성격에 맞춰 앱이나 CS(Client-Server)로 구성되는 경우가 있다.
+    - 이전 파트에서 학습한 스프링 MVC와 JSP를 이용한 화면구성이 이에 속한다.
+    
+- Business Tier(비즈니스 계층)
+    - 순수한 비즈니스 로직을 담고있는 영역
+    - 고객이 원하는 요구 사항을 반영하는 계층으로 **중요한 영역** 이다
+    - 주로 'xxxService'와 같은 이름으로 구성, 메스드의 이름 역시 고객들이 사용하는 용어를 그대로 사용
+- Persistence Tier(영속 계층 혹은 데이터 계층)
+    - 데이터를 어떤 방식으로 보관하고, 사용하는가에 대한 설계가 들어가는 계층
+    - 일반적인 경우 데이터베이스를 많이 사용하지만, 경우에 따라 네트워크 호출이나 원격 호출등의 기술이 접목
+    - 해당 영역은 MyBatis와 mybatis-spring을 이용해서 구성했던 파트 1을 이용
+
+### 2. 각 영역의 Naming Convention(명명 규칙)
+
+    - 프로젝트를 위의 3-Tier 방식으로 구성하는 가장 일반적인 설명은 '유지보수' 에 대한 필요성 떄문이다.
+    - 따라서 각 영역은 설계당시부터 영역을 구분하고, 해당 연결 부위는 인터페이스를 이용해서 설계하는 것이 일반적인 구성방식이다.
+
+|네이밍|설명
+|----|--
+|xxxController|스프링 MVC 에서 동작하는 Controller 클래스를 설계할 때 사용
+|xxxService, xxxServiceimpl| 비즈니스 영역을 담당하는 인터페이스는 'xxxServie'라는 방식을 사용하고, 인터페이스를 구현한 클래스는 'xxxServiceimpl'이라는 이름을 사용
+|xxxDAO,xxxRepository|DAO(Data-Access-Object)나 Repository(저장소)라는 이름으로 영역을 따로 구성하는 것이 보편적이다. 다만 이 책에서는 별도의 DAO를 구성하는 대신 MyBatis의 Mapper 인터페이스를 활용한다.
+|VO, DTO| - VO와 DTO는 일반적으로 유사한 의미로 사용되는 용어로 데이터를 담고 있는 객체를 의미한다는 공통점이 있다. </br> - VO는 Read Only의 목적이 강하고, 데이터 자체도 Immutable(불변)하게 설계하는 것이 정석이다 </br> - DTO는 주로 데이터 수집의 용도가 좀더 강하다. 예로 웹하면에서 로그인하는 정보를 DTO로 처리하는 방식을 사용한다.
+
+#### 2.1. 패키지의 Naming Convention
+    - 패키지의 구성은 프로젝트의 크기나 구성원들의 성향으로 결정한다.
+    - 규모가 작은 프로젝트는 Controller 영역을 별도의 패키지로 설계하고, Service 영역 등을 하나의 패키지로 설계할 수 있다.
+    - 규모가 큰 프로젝트는 Service 클래스와 Controller들이 혼재할수 있다면 비즈니스를 단위별로 구성하고(비즈니스 단위 별로 패키지 작성) 다시 내부에서 Controller 패키지, Service 패키지 등으로 다시 나누는 방식을 이용한다.
+
+### 3. 화면 설계
+
+    - 화면설계 시 주로 Mock-up(목업) 툴을 이용하는 경우가 많다.
+    - 대표적으로 PowerPoint나 Balsamiq studio, Pencil Mockup 등의 SW를 이용해서 작성한다.
+
+### 4. 테이블 생성
+```
+regdate date default sysdate,
+updatedate date default sysdate
+``` 
+ - default sysdate를 해줌으로써 기본값으로 현재 시간이 들어갈 수 있도록 만들어준다.
+
+ ## **Chapter 08** 영속/비즈니스 계층의 CRUD 구현
+- 영속 계층의 작업은 항상 다음과 같은 순서로 진행
+    - 테이블의 칼럼 구조를 반영하는 VO(Value Object)클래스의 생성
+    - MyBatis의 Mapper 인터페이스의 작성/XML 처리
+    - 작성한 Mapper 인터페이스의 테스트
+
+### 1. Mapper Interface
+```java
+public interface BoardMapper {
+	
+	@Select("select * from tbl_board where bno > 0")
+	public List<BoardVO> getList();
+
+}
+```
+- **'where bno > 0'** 와 같은 조건은 테이블을 검색하는데 bno라는 컬럼 조건을 주어서 Primary Key를 이용하도록 유도하는 조건이다.
+
+### 2. 영속 영역의 CRUD 구현
+- MyBatis는 내부적으로 JDBC의 PreparedStatment를 활용하고 필요한 파라미터를 처리하는 '?' 에 대한 치환은 '#{속성}'을 이용해서 처리한다.
