@@ -57,7 +57,7 @@ HikariCP
 **- XML 기반 설정 -**  
 root-context.xml 
 ```
-<!-- Root Context: defines shared resources visible to all other web components -->
+	<!-- Root Context: defines shared resources visible to all other web components -->
 	<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
 		<property name="driverClassName"  value="oracle.jdbc.driver.OracleDriver"></property>
 		<property name="jdbcUrl"  value="jdbc:oracle:thin:@localhost:1521:XE"></property>
@@ -77,7 +77,6 @@ RootConfig.java
 
     @Configuration
     @ComponentScan(basePackages= {"org.zerock.sample"})	
-    @MapperScan(basePackages = {"org.zerock.mapper"})
     public class RootConfig {
 	
 	@Bean
