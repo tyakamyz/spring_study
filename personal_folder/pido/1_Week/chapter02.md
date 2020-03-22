@@ -50,7 +50,7 @@
    ```@ComponentScan(basePackages= {"org.zerock.sample})```   
    어노테이션 추가
 
--
+.
 
 스프링 실행 시 ```<context:component-scan>``` 태그를 통해 관리해야하는 페이지를 스캔하고 스프링이 사용하는 ```@Component``` 라는 어노테이션이 존재하는 클래스의 인스턴스를 생성한다. 객체가 필요하다는 의미의 어노테이션 ```@Autowired``` 설정으로 필요한 객체의 레퍼런스를 를 해당 객체에 주입한다.   
 
