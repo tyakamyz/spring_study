@@ -60,7 +60,6 @@
     - < context-param > 에는 root-context.xml의 경로가 설정되어있다.
     - < listener >에는 스프링 MVC의 ContextLoaderListener가 등록되어 있는 것을 볼 수 있다.
     - ContextLoaderListener는 해당 웹 어플리케이션 구동 시 같이 동작하므로 해당 프로젝트를 실행하면 가장 먼저 로그를 출력하면서 기록된다.  
-    <br/>
     >  #### (2) root-context.xml이 처리되면 파일에 있는 빈(Bean) 설정들이 동작하게 된다.
     - root-context.xml에 정의된 객체(Bean)들은 스프링의 영역(context)안에 생성되고, 객체들 간의 의존성이 처리된다.
     >   #### (3) root-context.xml이 처리된 후에는 스프링 MVC에서 사용하는 DispatcherServlet이라는 서블릿과 관련된 설정이 동작한다.
@@ -80,7 +79,6 @@
     >   (3) **Model** -> **Controller** (데이터 처리 후 전달)  
     >   (4) **Controller** -> **View**  (처리된 데이터 가공 후 전달)  
     >   (5) **View** -> Response  (전달)
-    </br>
     - 스프링 MVC 기본 구조
     >   #### (1) Request -> **DispatcherServlet** <br/>(Front-Controller 인 DispatcherServlet을 통해 사용자 Request 처리)  
     ```xml
