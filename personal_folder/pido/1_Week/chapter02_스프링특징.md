@@ -72,20 +72,3 @@
 > ```@Component``` : Spring에게 해당 클래스가 객체로 만들어서 관리해야하는 대상임을 명시   
 > ```@Autowired``` : 자신이 특정한 객체에 의존적이므로 자신에게 해당 타입의 빈을 주입해주라는 표시
 
-  
-<hr />  
-
-
-Check
--------
-> - J2EE
-> - EJB
-> - OOP
-> - 의존성 주입(DI)
-> - REST 방식의 컨트롤러
-> - POJO(Plain Old Java Object)
-> - AOP
-
-
-
-
