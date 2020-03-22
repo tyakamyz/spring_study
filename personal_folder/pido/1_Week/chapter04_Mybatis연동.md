@@ -136,7 +136,7 @@ log4jdbc-log4j
 **- XML 기반 설정 -**  
 root-context.xml 
 ```
-<!-- Root Context: defines shared resources visible to all other web components -->
+	<!-- Root Context: defines shared resources visible to all other web components -->
 	<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
 		<property name="driverClassName"  value="net.sf.log4jdbc.sql.jdbcapi.DriverSpy"></property>
 		<property name="jdbcUrl"  value="jdbc:log4jdbc:oracle:thin:@localhost:1521:XE"></property>
@@ -153,8 +153,7 @@ root-context.xml
 **- JAVA 기반 설정 -**
 RootConfig.java
 ```
-/**
-	 @Configuration
+    @Configuration
     @ComponentScan(basePackages= {"org.zerock.sample"})	
     @MapperScan(basePackages = {"org.zerock.mapper"})
     public class RootConfig {
