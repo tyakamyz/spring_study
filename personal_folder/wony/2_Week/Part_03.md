@@ -69,3 +69,79 @@ public interface BoardMapper {
 
 ### 2. 영속 영역의 CRUD 구현
 - MyBatis는 내부적으로 JDBC의 PreparedStatment를 활용하고 필요한 파라미터를 처리하는 '?' 에 대한 치환은 '#{속성}'을 이용해서 처리한다.
+
+#### 2.1 create(insert) 처리
+```sql
+<insert id="insert">
+		insert into tbl_board(bno, title, content, writer)
+		values (seq_board.nextval, #{title}, #{content}, #{writer})
+	</insert>
+	
+	<insert id="insertSelectKey">
+		<selectKey keyProperty="bno" order="BEFORE" resultType="long">
+			select seq_board.nextval from dual
+		</selectKey>
+		
+		insert into tbl_board (bno, title, content, writer)
+		values (${bno}, ${title}, ${content}, ${writer})
+	</insert>
+```
+ - **insertSelectKey** 는 @SelectKey라는 MyBatis의 어노테이션을 이용한다.
+ - @SelectKey는 주로 PK값을 미리(Before) SQL을 통해서 처리해 두고 특정한 이름으로 결과를 보관하는 방식이다.
+ - @Insert 할때 SQL문을 보면 #{bno}와 같이 이미 처리된 결과를 이용하는 것을 볼 수있다.
+
+ ```java
+ @Test
+	public void testInsert() {
+		
+		BoardVO boardVO = new BoardVO();
+		boardVO.setTitle("새로 작성하는 글");
+		boardVO.setContent("새로 작성하는 내용");
+		boardVO.setWriter("newbie");
+		
+		mapper.insert(boardVO);
+		
+		log.info(boardVO); 
+        //lombok 이 만들어주는 toString()을 이용해서 bno 멤버 변수(인스턴스 변수)의 값을 알아보기 위함이다.
+		
+	}
+```
+
+ - @SelectKey를 이용하는 방식은 SQL을 한 번 더 실행하는 부담이 있기는 하지만 자동으로 추가되는 PK값을 확인해야 하는 상황에서는 유용하게 사용될 수 있다.
+ #### 2.2 read(select) 처리
+ 
+ ```sql
+<select id="read" resultType="org.zerock.domain.BoardVO">
+    select * from tbl_board where bno = ${bno}
+</select>
+```
+ - MyBatis는 bno라는 칼럼이 존재하면 인스턴스의 'setBno()'를 호출 하게된다.
+ - MyBatis의 모든 파라미터와 리턴 타입의 처리는 get 파라미터명(), set 칼럼명()의 규칙으로 호출 된다.
+ - **다만 위에같이 #{속성}이 1개만 존재하는 경우 별도의 get 파라미터명()을 사용하지 않고 처리한다.**
+ ```java
+ @Test
+	public void testRead() {
+		
+		BoardVO board = mapper.read(5L);
+		
+		log.info(board);
+	}
+```
+- mapper.read(5L) long형을 파라마티로 사용하는데 숫자뒤에 '**L**'을 사용하므로써 Long형임을 표시해서 알려준다.
+
+```sql
+select * from tbl_board where bno = #{bno}
+```
+```sql
+select * from tbl_board where bno = ${value}
+```
+
+ - 예제 작성 중 매개변수 입력 형식을 **${bno}** 로 잘못 작성해서 JUnit 테스트틀 진행하였더니 오류가났었다. 오류사항을 확인도중 입력 받는형식이 **$**, **#** 두가지 모두 가능한것을 확인했다.  
+ 
+ ||#{속성}|${속성}|
+ |------|------|------|
+ |Long(단일)|#{속성}, ${value}|${value}
+ |Long,String 등(복수)|#{속성}| String일 경우 '${속성}' ,number타입은 ${속성}
+
+ #### 2.3 delete 처리
+  - 등록, 삭제, 수정과 같은 DML 작업은 '몇 건의 데이터가 삭제(혹은 수정)되었는지'를 반환할 수 있다.
