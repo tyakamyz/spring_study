@@ -21,7 +21,7 @@
 >	* @EnableWebMvc 어노테이션 이용
 > 	* <details markdown="1">
 > 		<summary>ServletConfig 클래스</summary> 
-> 	```java
+> 		```java
 >		 @EnableWebMvc
 >		 @ComponentScan(basePackages = {"org.zerock.controller"})
 >		 public class ServletConfig implements WebMvcConfigurer {
@@ -42,6 +42,6 @@
 >			}
 >		
 > 		}	
->	``` 
+>		``` 
 ></details>
 > 
