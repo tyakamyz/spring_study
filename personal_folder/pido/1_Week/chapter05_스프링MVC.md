@@ -17,6 +17,31 @@
 #### JAVA 기반 설정   
 > - web.xml, servlet-context.xml, root-context.xml 제거   
 > - pom.xml 에 web.xml 미사용 설정 추가 
-> - servlet-context.xml을 대신할 RootConfig.java, WebConfig.java, servletConfig.jvav(Spring MVC 이용시) 클래스 생성 
-
-[☝ 관련 설정 소스 참고](https://github.com/tyakamyz/spring_study/blob/master/personal_folder/pido/1_Week/chapter01_%EA%B0%9C%EB%B0%9C%ED%99%98%EA%B2%BD%EC%84%A4%EC%A0%95.md)
+> - servlet-context.xml을 대신할 RootConfig.java, WebConfig.java, servletConfig.java(Spring MVC 이용시) 클래스 생성   
+>	* @EnableWebMvc 어노테이션 이용
+> 	* <details markdown="1">
+> 		<summary>ServletConfig 클래스</summary> 
+> 	```java
+>		 @EnableWebMvc
+>		 @ComponentScan(basePackages = {"org.zerock.controller"})
+>		 public class ServletConfig implements WebMvcConfigurer {
+> 		
+>		 	@Override
+> 			public void configureViewResolvers(ViewResolverRegistry registry) {
+> 		
+> 			InternalResourceViewResolver bean = new  InternalResourceViewResolver();
+> 			bean.setViewClass(JstlView.class);
+> 			bean.setPrefix("/WEB-INF/views/");
+>			bean.setSuffix(".jsp");
+>			registry.viewResolver(bean);
+>			}
+>			
+>			@Override
+>			public void addResourceHandlers(ResourceHandlerRegistry registry) { 
+>				registry.addResourceHandler("/resources/**").addResourceLocations("/resources/");
+>			}
+>		
+> 		}	
+>	``` 
+></details>
+> 
