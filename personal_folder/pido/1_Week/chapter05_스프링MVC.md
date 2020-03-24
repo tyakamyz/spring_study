@@ -54,7 +54,7 @@
 >			return new String[] { "/" };
 >		}
 >		``` 
-[☝ 관련 설정 소스 참고](https://github.com/tyakamyz/spring_study/blob/master/personal_folder/pido/1_Week/chapter01_%EA%B0%9C%EB%B0%9C%ED%99%98%EA%B2%BD%EC%84%A4%EC%A0%95.md)
+> -	[☝ 관련 설정 소스 참고](https://github.com/tyakamyz/spring_study/blob/master/personal_folder/pido/1_Week/chapter01_%EA%B0%9C%EB%B0%9C%ED%99%98%EA%B2%BD%EC%84%A4%EC%A0%95.md)
 
 #### 프로젝트 로딩 구조
 ### - 설정
