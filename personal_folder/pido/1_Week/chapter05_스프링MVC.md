@@ -56,12 +56,12 @@
 >		``` 
 > -	[☝ 관련 설정 소스 참고](https://github.com/tyakamyz/spring_study/blob/master/personal_folder/pido/1_Week/chapter01_%EA%B0%9C%EB%B0%9C%ED%99%98%EA%B2%BD%EC%84%A4%EC%A0%95.md)
 
-#### 프로젝트 로딩 구조
-### - 설정
+### 프로젝트 로딩 구조
+#### - 설정
 * 스프링 : root-context.xml, servlet-context.xml
 * 톰캣 : web.xml
 
-### - 구동(XML 기반)
+#### - 구동(XML 기반)
 * 1．web.xml dml Context Listener (스프링MVC의 ContextLoaderListener) 동작
 * 2．root-context.xml 처리 후 정의된 Bean 동작
 * 3．DispatcherServlet 설정 동작(내부적으로 웹 관련 처리의 준비작업을 진행하는데 사용)
