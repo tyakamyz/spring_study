@@ -98,7 +98,7 @@
         
     }
     ```
-- Chef.java
+- Restaurant.java
     ```java
     package org.zerock.sample;
 
@@ -322,7 +322,7 @@
     @ContextConfiguration("file:src/main/webapp/WEB-INF/spring/root-context.xml")
     /*
     * JAVA 설정을 사용하는 경우
-    * @ContextConfiguration(class = {RootConfig.class})
+    * @ContextConfiguration(classes = {RootConfig.class})
     */
     @Log4j
     public class DataSourceTests {
