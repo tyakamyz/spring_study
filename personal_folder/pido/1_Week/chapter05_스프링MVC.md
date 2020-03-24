@@ -19,7 +19,7 @@
 > - pom.xml 에 web.xml 미사용 설정 추가 
 > - servlet-context.xml을 대신할 RootConfig.java, WebConfig.java, servletConfig.java(Spring MVC 이용시) 클래스 생성   
 >	* @EnableWebMvc 어노테이션 이용
->		<details markdown="1">
+>	* 	<details markdown="1">
 > 		<summary>ServletConfig 클래스</summary>
 >	
 >		```java   
