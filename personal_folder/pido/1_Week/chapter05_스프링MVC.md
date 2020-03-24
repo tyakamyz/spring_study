@@ -13,7 +13,7 @@
 > - spring-test(springVersion) 와 lombok(1.18.0) 라이브러리 추가
 > - javax.servlet-api(2.5 → 3.1.0) 서블릿 버전  
 > - maven-compiler(1.6 → 1.8) 컴파일 옵션  
-*project - Maven - update project *   
+*project - Maven - update project*   
 
 #### JAVA 기반 설정   
 > - web.xml, servlet-context.xml, root-context.xml 제거   
