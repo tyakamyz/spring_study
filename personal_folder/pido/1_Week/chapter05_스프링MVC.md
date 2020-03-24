@@ -1,5 +1,5 @@
 
-[Part1] - chapter 05
+[Part2] - chapter 05
 =========================
 
 스프링 MVC 
