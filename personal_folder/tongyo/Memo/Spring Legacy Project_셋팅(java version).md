@@ -1,4 +1,19 @@
+> xml 파일들 삭제
+- web.xml 삭제
+- root-context.xml 삭제
+- servlet-context.xml 삭제
 > pom.xml
+- \<plugins> 안에 내용 추가
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-war-plugin</artifactId>
+    <version>3.2.0</version>
+    <configuration>
+        <failOnMissingWebXml>false</failOnMissingWebXml>
+    </configuration>
+</plugin>
+```
 - 스프링 버전과 JAVA 버전 변경
 ```xml
 <properties>
@@ -147,3 +162,150 @@
 > Oracle JDBC Driver(ojdbc8.jar)
 - ojdbc8.jar 파일 Build Path에 추가
 - ojdbc8.jar 파일 Deployment Assembly에 추가
+
+> RootConfig.java
+- root-context.xml 대신 사용
+- src/main/java/......../RootConfig.java
+```java
+package org.zerock.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ComponentScan;
+
+import javax.sql.DataSource;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
+@Configuration
+@ComponentScan(basePackages= {"org.zerock.mapper"})
+public class RootConfig {
+	@Bean
+	  public DataSource dataSource() {
+	    HikariConfig hikariConfig = new HikariConfig();
+
+	    hikariConfig.setDriverClassName("oracle.jdbc.driver.OracleDriver");
+	    hikariConfig.setJdbcUrl("jdbc:oracle:thin:@tongracle.cnsqtfo00xiq.ap-northeast-2.rds.amazonaws.com:1521:orcl");
+
+	    hikariConfig.setUsername("book_ex");
+	    hikariConfig.setPassword("book_ex");
+
+	    HikariDataSource dataSource = new HikariDataSource(hikariConfig);
+
+	    return dataSource;
+	  }
+}
+```
+> WebConfig.java
+- web.xml 대신 사용
+- src/main/java/......../WebConfig.java (RootConfig.java와 동일한 위치)
+```java
+package org.zerock.config;
+
+import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
+
+public class WebConfig extends AbstractAnnotationConfigDispatcherServletInitializer {
+	@Override
+	protected Class<?>[] getRootConfigClasses(){
+		return new Class[] {RootConfig.class};
+	}
+	
+	@Override
+	protected Class<?>[] getServletConfigClasses(){
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	protected String[] getServletMappings(){
+		// TODO Auto-generated method stub
+		return null;
+	}
+}
+```
+> log4jdbc.log4j2.properties
+- src/main/resources/log4jdbc.log4j2.properties
+```properties
+log4jdbc.spylogdelegator.name=net.sf.log4jdbc.log.slf4j.Slf4jSpyLogDelegator
+```
+> DataSourceTests.java
+- DataSource 테스트
+- src/test/java/....../DataSourceTests.java
+```java
+package org.zerock.persistence;
+
+import static org.junit.Assert.fail;
+
+import java.sql.Connection;
+
+import javax.sql.DataSource;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.zerock.config.RootConfig;
+
+import lombok.Setter;
+import lombok.extern.log4j.Log4j;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+//@ContextConfiguration("file:src/main/webapp/WEB-INF/spring/root-context.xml")
+//JAVA 설정을 사용하는 경우
+@ContextConfiguration(classes = {RootConfig.class})
+ 
+@Log4j
+public class DataSourceTests {
+	@Setter(onMethod_= {@Autowired})
+	private DataSource dataSource;
+	
+	@Test
+	public void testConnection() {
+		try(Connection con = dataSource.getConnection()){
+			log.info(con);
+		}catch(Exception e) {
+			fail(e.getMessage());
+		}
+	}
+}
+```
+> JDBCTests.java
+- JDBC 테스트
+- src/test/java/....../JDBCTests.java (DataSourceTests.java와 동일한 위치)
+```java
+package org.zerock.persistence;
+
+import static org.junit.Assert.fail;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+
+import org.junit.Test;
+
+import lombok.extern.log4j.Log4j;
+
+@Log4j
+public class JDBCTests {
+	static {
+		try {
+			Class.forName("oracle.jdbc.driver.OracleDriver");
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Test
+	public void testConnection() {
+		try(Connection con = DriverManager.getConnection("jdbc:oracle:thin:@tongracle.cnsqtfo00xiq.ap-northeast-2.rds.amazonaws.com:1521:orcl","book_ex","book_ex")) {
+			log.info(con);
+		}catch(Exception e) {
+			fail(e.getMessage());
+		}
+	}
+}
+```
