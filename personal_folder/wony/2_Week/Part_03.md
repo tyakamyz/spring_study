@@ -145,3 +145,123 @@ select * from tbl_board where bno = ${value}
 
  #### 2.3 delete 처리
   - 등록, 삭제, 수정과 같은 DML 작업은 '몇 건의 데이터가 삭제(혹은 수정)되었는지'를 반환할 수 있다.
+
+## **Chapter 09** 비즈니스 계층
+
+ - 고객의 요구사항을 반영하는 계층으로 프레젠테이션 계층과 영속 계층의 중간다리 역할
+ - 영속 계층은 데이터베이스를 기준으로 해서 설계를 나눠 구현하지만, **비즈니스 계층** 은 로직을 기준으로 해서 처리한다.
+ - 설계 시 계층 간의 연결은 인터페이스를 이용해서 느슨한(loose) 연결(결합)을 한다.  
+(Service(Interface) + ServiceImpl(Class))
+
+
+```java
+@Service
+@AllArgsConstructor
+//@Log4j
+public class BoardServiceImpl implements BoardService{
+	
+	//spring 4.3 이상에서 자동 처리 (미해결)
+//	private BoardMapper mapper;
+	
+	@Setter(onMethod_ = @Autowired)
+	private BoardMapper mapper;
+```
+    -  ServiceImpl 작성 중 **@Setter** 방식이 아닌 **@@AllArgsConstructor** 어노테이션 방식으로 진행도중 에러사항 발생(미해결)으로 인해 Setter로 사용해서 진행헀다. 확인 필요!
+
+ - 확인결과
+ ```xml
+ <dependency>
+    <groupId>log4j</groupId>
+    <artifactId>log4j</artifactId>
+    <version>1.2.15</version>
+```
+ ```xml
+ <dependency>
+    <groupId>log4j</groupId>
+    <artifactId>log4j</artifactId>
+    <version>1.2.17</version>
+</dependency>
+```
+ > 기존의 log4j default version인 1.2.15로 진행 했을 때 위의 문제사항이 발생함을 확인
+ > 이후의 **1.2.17** version으로 업그레이드 후 정상 작동됨을 확인
+
+ ### 9.1 스프링의 서비스 객체 설정(root-context.xml)
+
+  - root-context.xml 의 namespace에 context를 추가하면 해당 이름으로 시작하는 태그들을 활용 할 수 있다.
+  ```xml
+  <context:component-scan base-package="org.zerock.service"></context:component-scan>
+  ```
+  - 그후 위의 내용을 추가해서 @Service 어노테이션이 있는 **org.zerock.service** 패키지를 스프링의 빈으로 스캔하도록 추가해야한다.
+
+  ### 9.2 삭제/수정
+
+   - 정상적으로 삭제, 수정이 이루어지면 1이라는 값이 반환된다.
+
+
+## **Chapter 10** 프레젠테이션(웹) 계층의 CRUD 구현
+
+ - BoardController의 분석
+
+ |Task|URL|Method|Parameter|From|URL 이동|
+ |----|---|------|---------|----|-------|
+ |전체등록|/board/list|GET
+ |등록처리|/board/register/POST|모든항목|입력화면 필요|이동
+ |조회|/board/read|GET|bno=123|
+ |삭제 처리|/board/remove|POST|bno|입력화면 필요|이동
+ |수정 처리|/board/modify|POST|모든 항목|입력화면 필요 | 이동
+
+ ### 10.1 BoardController
+ ```java
+@Controller
+@Log4j
+@RequestMapping("/board/*")
+public class BoardController {
+
+}
+```
+ - @Controller 어노테이션을 추가해서 스프링의 빈으로 인실할 수 있게한다.
+ - @ReuquestMapping을 통해 '/board'로 시작하는 모든처리를 BoardController가 하도록 지정
+
+ ### 10.2 **URL 테스트 방법**
+
+ - 웹을 개발할 때 매번 URL을 테스트하기 위해 Tomcat과 같은 WAS를 실행하는 불편한 단계를 생략하기 위해서 스프링의 테스트 기능을 활용한다.
+ ```java
+ @RunWith(SpringJUnit4ClassRunner.class)
+//Test for Controller
+@WebAppConfiguration
+@ContextConfiguration({"file:src/main/webapp/WEB-INF/spring/appServlet/servlet-context.xml",
+	"file:src/main/webapp/WEB-INF/spring/root-context.xml"}) // XML Version
+//@ContextConfiguration(classes = {RootConfig.class, ServletConfig.class}) // Java Version
+@Log4j
+public class BoardControllerTests {
+
+	@Setter(onMethod_ = @Autowired)
+	private WebApplicationContext ctx;
+	
+	private MockMvc mockMvc;
+	
+	
+	@Before
+	public void setup() {
+		this.mockMvc = MockMvcBuilders.webAppContextSetup(ctx).build();
+	}
+	
+	@Test
+	public void testList() throws Exception{
+		log.info(
+				mockMvc.perform(MockMvcRequestBuilders.get("/board/list"))
+				.andReturn()
+				.getModelAndView()
+				.getModelMap()
+			);
+		
+	}
+}
+```
+>   - 테스트 클래스의 선언부에는 @WebAppConfiguration 을 사용한다. Servlet의 ServletContext를 이용하기 위해서인데 스프링에서는 WebApplicationContext라는 존재를 이용하기 위해서 이다.
+>   - @Before 가 적용된 setUp()에서는 import 할 때 JUnit을 이용해야한다. 해당 어노테이션이 적용된 메서드는 모든 테스트 전에 매번 실행되는 메서드가 된다.
+>   - MockMvc는 말 그대로 **'가짜 mvc'** 로생각하면된다.  
+>   가짜로 URL과 파라미터 등을 브라우저에서 사용하는 것처럼 만들어서 Controller를 실행 해 볼 수 있다.
+>   1. MockMvcRequestBuilders라는 존재를 이용해서 GET 방식의 호출을 한다.
+>   2. BoardController의 getList()에서 반환된 결과를 이용해 Model에 어떠한 데이터들이 담겨 있는지 확인한다.
+>   - Tomcat을 통해 실행되는 방식이아니라 기존의 JUnit Test로 실행하면된다.
