@@ -265,3 +265,58 @@ public class BoardControllerTests {
 >   1. MockMvcRequestBuilders라는 존재를 이용해서 GET 방식의 호출을 한다.
 >   2. BoardController의 getList()에서 반환된 결과를 이용해 Model에 어떠한 데이터들이 담겨 있는지 확인한다.
 >   - Tomcat을 통해 실행되는 방식이아니라 기존의 JUnit Test로 실행하면된다.
+
+### 10.3 등록 처리와 테스트
+
+- 등록
+```java
+	@PostMapping("/register")
+	public String register(BoardVO board, RedirectAttributes rttr) {
+		log.info("register : " + board);
+		
+		service.register(board);
+		
+		rttr.addFlashAttribute("result", board.getBno());
+		
+		return "redirect:/board/list";
+	}
+```
+>   - 등록 작업이 끝난 후 다시 목록 화면으로 이동하기 위해 RedirectAttributes를 파라미터를 사용한다.
+>   - 리턴시 'redirect:' 접두어를 사용하면 스프링 MVC가 내부적으로 **response.sendRedirect()** 를 처리해준다
+
+- 등록 테스트
+```java
+@Test
+	public void testRegister() throws Exception{
+		
+		String resultPage = mockMvc.perform(MockMvcRequestBuilders.post("/board/register")
+				.param("title", "테스트 새글 제목")
+				.param("content", "테스트 새글내용")
+				.param("writer", "user00"))
+				.andReturn().getModelAndView().getViewName();
+		
+		log.info(resultPage);
+	}
+```
+
+>   - MockMvcRequestBuilder의 post()를 이용하면 POST방식으로 전달할 수 있다.
+>   - param()을 이용해서 전달해야 하는 파라미터들을 지정할 수 있다.(Input 태그와 유사한 역할)
+
+### 10.4 조회
+
+- 조회 테스트
+```java
+@Test
+	public void testGet() throws Exception{
+		
+		log.info(mockMvc.perform(MockMvcRequestBuilders
+				.get("/board/get")
+				.param("bno", "2"))
+				.andReturn()
+				.getModelAndView().getModelMap());
+	}
+```
+
+## **Chapter 11** 화면 처리
+
+ - 화면을 개발하기 전에는 반드시 화면의 전체 레이아웃이나 디자인이 반영된 상태에서 개발하는 것을 추천한다.
