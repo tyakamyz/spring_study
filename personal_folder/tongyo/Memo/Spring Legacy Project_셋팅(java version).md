@@ -232,6 +232,15 @@ public class WebConfig extends AbstractAnnotationConfigDispatcherServletInitiali
 ```properties
 log4jdbc.spylogdelegator.name=net.sf.log4jdbc.log.slf4j.Slf4jSpyLogDelegator
 ```
+> RootConfig.java
+- log4jdbc 사용할 수 있도록 변경
+- sql 결과가 보기좋게 표시됨
+```java
+//  hikariConfig.setDriverClassName("oracle.jdbc.driver.OracleDriver");
+// 	    hikariConfig.setJdbcUrl("jdbc:oracle:thin:@tongracle.cnsqtfo00xiq.ap-northeast-2.rds.amazonaws.com:1521:orcl");
+hikariConfig.setDriverClassName("net.sf.log4jdbc.sql.jdbcapi.DriverSpy");
+	    hikariConfig.setJdbcUrl("jdbc:log4jdbc:oracle:thin:@tongracle.cnsqtfo00xiq.ap-northeast-2.rds.amazonaws.com:1521:orcl");
+```
 > DataSourceTests.java
 - DataSource 테스트
 - src/test/java/....../DataSourceTests.java
