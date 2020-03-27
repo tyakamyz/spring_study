@@ -320,3 +320,61 @@ public class BoardControllerTests {
 ## **Chapter 11** 화면 처리
 
  - 화면을 개발하기 전에는 반드시 화면의 전체 레이아웃이나 디자인이 반영된 상태에서 개발하는 것을 추천한다.
+
+ ```xml
+ <beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp" />
+	</beans:bean>
+ ```
+  - 스프링 MVC의 설정에서 화면 설정은 ViewResolver라는 객체를 통해서 이루어진다.
+  - 위의 servlet-context.xml의 설정을 보면 '/WEB-INF/views'폴더를 이용하는 것을 볼 수 있다.
+  - '/WEB-INF' 경로는 브라우저에서 직접 접근할 수 업슨 경로이므로 반드시 Controller를 이용하는 모델 2방식에서는 기본적으로 사용하는 방식이다.
+
+  ### 11.1 resources
+
+  ```xml
+  <resources mapping="/resources/**" location="/resources/" />
+  ```   
+  - servlet-context.xml의 일부로 CSS나 JS 파일과 같이 정적인(static) 자원들의 경로를 'resources'라는 경로로 지정하고있다.
+
+  ### 11.2 JSTL fmt(형식화)
+
+  ```js
+  <td><fmt:formatDate value="${board.updateDate }" pattern="yyyy-mm-dd"/></td>
+  ```
+   - fmt(형식화)에서 formatDate태그로 yyyy/mm/dd 날짜포맷을 yyyy-mm-dd로 포맷 변환을 해준다.
+
+ ### 11.3 한글 문제와 UTF-8 필터 처리
+- 브라우저에서 전송되는 데이터는 개발자도구의 **NetWork** 탭의 Form Data를 통해서 확인할 수 있다.
+이 때, Post방식으로 제대로 전송되었는지, 한글이 깨진 상태로 전송된 것인지를 확인할 수 있다.
+- 브라우저에서의 전송된 데이터가 한글 데이터로 정상으로 보내졌을 경우 Lombok의 로그를 확인해보면 Controller에 전달 될 때 이미 한글이 깨진 상태로 처리되있을 확률이 대부분이다.
+- 해결방안으로는 아래의 소스를 추가한다.
+>   - xml Version
+```xml
+<filter>
+		<filter-name>encoding</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+	</filter>
+	
+	<filter-mapping>
+		<filter-name>encoding</filter-name>
+		<servlet-name>appServlet</servlet-name>
+	</filter-mapping>
+```
+>   - Java Version (getServletFilters @Override)
+```java
+@Override
+	protected Filter[] getServletFilters() {
+		// TODO Auto-generated method stub
+		CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
+		characterEncodingFilter.setEncoding("UTF-8");
+		characterEncodingFilter.setForceEncoding(true);
+		
+		return new Filter[] {characterEncodingFilter};
+	}
+```
