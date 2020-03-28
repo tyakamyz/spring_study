@@ -378,3 +378,135 @@ public class BoardControllerTests {
 		return new Filter[] {characterEncodingFilter};
 	}
 ```
+
+### 11.4 일회성 데이터 redirect
+ - RedirectAttributes라는 타입의 addFlashattribute() 함수는 보관덴 데이터는 단 한번만 사용할 수 있게 보관된다 (내부적으로는 HttpSession을 이용해서 처리된다.)
+
+ ### 11.5 목록 페이지와 뒤로가기 문제
+  - 최근의 웹페이지들은 사용자들의 트래픽을 고려해 목록페이지에서 새창을 띄워서 조회페이지로 이동하는 방식을 선호하지만, 전통적인 방식에서는 현재창 내에서 이동하는 방식을 사용한다.
+  - 해당 예제에서 등록 -> 목록 -> 조회 화면 이동후 뒤로가기 버튼 사용하면 게시물이 등록 되었다는 모달창을 다시한번 볼 수 있다.
+  #### - 위의 뒤로가기 문제가 발생하는 이유로는 '뒤로가기', '앞으로가기'를 하면 서버를 다시 호출하는게 아니라 과거에 자신이 가진 모든 데이터를 활용하기 때문이다. (위의 RedirectAttributes 또한 예외없이 사용되는 것을 확인 할 수 있다.)
+
+  >  - 해결방안  
+  >  스택 구조로 동학하는 '**window 의 history**' 객체 사용
+  > 추가로 Teck_Stack -> Spring -> History(Back,Forward).md 파일확인
+
+### 11.6 수정/삭제
+ - 1) 조회 페이지에서 직접처리하는 방식
+ - 2) 별도의 수정/삭제 페이지를 만들어 해당 페이지에서 수정/삭제를 처리하는 방식
+ - 최근에는 게시물의 조회 페이지에서 댓글 등에 대한 처리가 많아지면서 '2)'의 수정/삭제를 별개의 페이지에서 하는 것이 일반적이다.
+
+ ### 11.7 다수의 Button 처리
+ ```js
+ $(document).ready(function(){
+ 		var formObj = $("form");
+ 		
+ 		$('button').on('click', function(e){
+ 			e.preventDefault();
+	 		var operation = $(this).data("oper");
+	 		
+	 		console.log(operation);
+	 		
+	 		if(operation === 'remove'){
+	 			formObj.attr("action", "/board/remove");
+	 		}else if(operation === 'list'){
+	 			self.location="/board/list";
+	 			return ;
+	 		}
+	 		
+	 		formObj.submit();
+ 		});
+ 	})
+```
+
+ - 여러개의 \<Button> 태그 사용시 속성값으로 위에서는 'data-oper'를 주어 버튼을 구분한다.
+ - <form> 태그의 모든 버튼은 기본적으로 submit으로 처리하기 때문에 'e.preventDefault()'로 기본동작을 막고 해당 버튼에 대한 속성을 지정 후에 마지막으로 submit()을 수행한다.  
+- $(form).empty() 로 폼 내부의 내용을 삭제할 수 있다.
+
+## **Chapter 12** 오라클 데이터베이스 페이징 처리
+
+ ### 12.1 Order by 문제
+
+- 수백 만 데이터가 주어졋을 때 빠르게 동작하는 SQL을 위해서는 먼저 order by 를 이용하는 작업을 하면 좋지 않다.
+
+ ### 12.2 SQL 실행 계획 과 order by
+ - 데이터 베이스에 전달된 SQL문은 아래와 같은 과정을 거친다.
+ >  1. SQL 파싱  
+    - SQL 구문에 오류가 있는지 검사   
+    - SQL을 실행 해야 하는 대상 객체(테이블, 제약 조건, 권한 등)가 존재 하는지 검사
+ >  2. SQL 최적화  
+    - SQL이 실행되는데 필요한 비용(cost) 계산  
+    - 계산된 값을 기초로 어떤 방식으로 실행하는 것이 좋은지 판단하는 '**실행 계획(execuion plan)**' 을 세운다.
+ >  3. SQL 실행  
+    - 세워진 실행 계획을 통해 메모리상에서 데이터를 읽거나 물리적인 공간에서 데이터를 로딩하는 등의 작업 진행
+
+ - 데이터가 많은상태에서의 정렬작업경우 가장 일반적인 해결책은 '인덱스(index)를 이용해서 정렬을 생략하는 방법이다.
+ - **인덱스** 라는 존재가 이미 정렬된 구조 이므로 이를 이용해서 별도의 정렬을 하지 않는 방법이다.
+ >  - index 사용 SQL
+ ```sql
+ select * from tbl_board order by bno desc;
+ ```
+ >  - hint 사용 SQL
+ ```sql
+ select /*+INDEX_DESC (tbl_board pk_board) */ *
+from tbl_board
+where bno >0;
+```
+ - index 사용 쿼리같은 경우 현재 index를 제대로 타지않는 결과를 보여준다. (확인필요)
+ - hint 사용쿼리 경우 index가 제대로 적용되어 빠른 속도의 효과를 적용할 수 있다.
+ - SQL의 실행 계획에서 주의해서 봐야 하는 부분
+    -  sort를 하지 않았다는 점
+    - tbl_board를 바로 접근하는 것이 아니라 pk_board(pk index)를 이용해서 접근한 점
+    - RANGE SCAN DESCRENDING, BY INDEX ROWID로 접근한 점
+
+### 12.3 Hint 사용 문법
+ - select문을 작성할 때 힌트는 잘못 작성되어도 실핼할 때는 무시되기만 하고 별도의 에러는 발생하지 않는다.
+ - 힌트 사용 문법
+ ```sql
+ SELECT
+ /*+ Hint name (param...) */ column name, .....
+ FROM
+  table name
+ ```
+  > - 힌트 구문은 '**/*+**' 로 시작하고 '***/**'로 마무리 된다.
+  > - 힌트 자체는 SQL로 처리되지 않기 때문에 위의 그림처럼 뒤에 컬럼명이 나오더라도 별도으 ','로 처리되지 않습니다.
+
+ ### 12.4 FULL 힌트
+  - 힌트 중에는 해당 select문을 실행할 때 테이블 전체를 스캔할 것으로 명시하는 FULL힌트가 있다.
+  - FULL 힌트는 테이블의 모든 데이터를 스캔하기 때문에 데이터가 많을 떄는 상당히 느리게 실행된다.
+  ```SQL
+  SELECT
+  /*+ FULL(table name) */ column name, .....
+  FROM 
+   table name
+```
+
+### 12.5 INDEX_ASC, INDEX_DESC 힌트
+ - 흔히 목록 페이지에서 가장 많이 사용하는 힌트는 인덱스와 관련된 'INDEX_ASC, INDEX_DESC'힌트이다.
+ - 이름에서도 보이는것과 같이 주로 'order by'를 위해서 사용한다.
+ - 인덱스 자체가 정렬을 해둔 상태이므로 이를 통해 SORT과정을 생략하기 위한 용도이다.
+ - 테이블 이름과 인덱스 이름을 같이 파라미터로 사용한다.
+ ```sql
+ SELECT 
+ /*+ INDEX_ASC or INDEX_DESC(table name index name) */ column name, ....
+ FROM
+  table name
+ ```
+  - 예제
+  ```sql
+ select /*+INDEX_DESC (tbl_board pk_board) */ *
+from tbl_board
+where bno >0;
+```
+
+### 12.6 ROWNUM
+ - ROWNUM 이라는 것은 데이터를 가져올 때 적용되는 것이다.
+ - 이 후 에 정렬되는 과정에서는 ROWNUM이 변경되지않는다. 정렬은 나중에 처리된다는 의미.
+ - Table Alias를 사용했을 경우와 사용하지 않을 경우의 RowNum 맺어지는 결과값이 다르가 작용된다. 해당 사용법 **확인필요**
+
+ ### 12.7 인덱스를 이용한 접근시 ROWNUM
+
+  - 인덱스를 통해 접근한다면 다음과 같은 과정으로 접근한다.  
+    1. 인덱스를 통해서 테이블에 접근
+    2. 접근한 데이터에 ROWNUM 부여
+  - 위의 1의 과정에서 이미 정렬이 되어있기 떄문에 ROWNUM은 전혀 다른 값을 가지게 된다.
