@@ -510,3 +510,84 @@ where bno >0;
     1. 인덱스를 통해서 테이블에 접근
     2. 접근한 데이터에 ROWNUM 부여
   - 위의 1의 과정에서 이미 정렬이 되어있기 떄문에 ROWNUM은 전혀 다른 값을 가지게 된다.
+
+### 12.8 페이지 번호 1,2의 데이터
+ - 한 페이지당 10개의 데이터를 출력한다고 가정할 때 ROWNUM 조건을 WHERE 구문에 추가해 다음과 같이 작성 가능하다
+ ```sql
+ select /*+INDEX_DESC(tbl_board pk_board) */
+rownum rn, bno, title, content
+from tbl_board
+where rownum <= 10;
+ ```
+
+ - 위의 1페이지 결과 이후 2페이지 결과를 동일한 쿼리로 가져올 경우 결과값이 나오지 않음을 확인할 수 있다.
+ ```sql
+ select /*+INDEX_DESC(tbl_board pk_board) */
+rownum rn, bno, title, content
+from tbl_board
+where rownum <= 20 and rownum > 10;
+```
+
+   - 위의 실행계획을 보면
+        - ROWNUM > 10 인데이터를 찾는다
+        - TBL_BOARD에 처음으로 나오는 ROWNUM의 값은 1이다. where의 조건에 의해 1값은 무시된다.
+        - ROWNUM의 값은 계속 1로 만들어지고 where 조건에 의해 없어지는 과정이 반복데므로 테이블의 모든 데이터를 스캔하지만 결과는 아무것도 나오지 않는다.
+        - 위의 결과에서 rownum이 1이 포함되게 조건을 수정해야 결과를 얻을 수 있다.
+
+#### 12.8.1 인라인 뷰(In-Line View) 처리
+- 'Select 문 안쪽 From에 다시 Select문'으로 처리하는 방법
+- 어떠한 결과를 구하는 Select 문이 잇고, 그 결과를 다시 대상으로 삼아 Select를 하는 것이다.
+```sql
+SELECT
+    rn,
+    bno,
+    title,
+    content
+FROM
+    (
+        SELECT /*+INDEX_DESC(tbl_board pk_board) */
+            ROWNUM rn,
+            bno,
+            title,
+            content
+        FROM
+            tbl_board
+        WHERE
+            ROWNUM <= 20
+    )
+WHERE
+    rn > 10;
+```
+ - 위의 과정
+    - 필요한 순서로 정렬된 데이터에 ROWNUM을 붙인다.
+    - 처음부터 해당 페이지의 데이터를 'ROWNUM <= 30'과 같은 조건을 이용해서 구한다.
+    - 구해놓은 데이터를 하나의 테이블처럼 간주하고 인라인뷰로 처리한다.
+    - 인라인뷰에서 필요한 데이터만을 남긴다.
+## **Chapter 13** MyBatis와 스프링에서 페이징 처리
+ - 페이징 처리를 위해 필요한 파라미터
+    - 페이지 번호(pageNum)
+    - 한 페이지당 몇개의 데이터(amount)를 보여줄 것인지
+
+- 페이지 번호와 몇 개의 데이터가 필요한지를 별도의 파라미터로 전달하는 방식도 나쁘지 않지만, 아예 이 데이터들을 하나의 객체로 묶어서 전달하는 방식이 나중을 생각하면 좀 더 확장성이 좋다.
+
+```java
+@Getter
+@Setter
+@ToString
+public class Criteria {
+	
+	private int pageNum;
+	private int amount;
+	
+	public Criteria() {
+		this(1,10);
+	}
+	
+	public Criteria(int pageNum, int amount) {
+		this.pageNum = pageNum;
+		this.amount = amount;
+	}
+
+}
+```
+- this(1,10)으로 생성자를 통해 기본값을 지정할 수 있다.
