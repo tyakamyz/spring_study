@@ -97,7 +97,7 @@
     <groupId>log4j</groupId>
     <artifactId>log4j</artifactId>
     <version>1.2.17</version>	<!-- lombok 활용을 위해 버젼 1.2.17 사용 -->
-    <exclusions>
+    <!-- <exclusions>
         <exclusion>
             <groupId>javax.mail</groupId>
             <artifactId>mail</artifactId>
@@ -115,7 +115,7 @@
             <artifactId>jmxri</artifactId>
         </exclusion>
     </exclusions>
-    <scope>runtime</scope>
+    <scope>runtime</scope> -->
 </dependency>
 ```
 - junit 버전 변경
@@ -316,5 +316,18 @@ public class JDBCTests {
 			fail(e.getMessage());
 		}
 	}
+}
+```
+> WebConfig.java
+- UTF-8 필터 설정
+- 데이터 전송 시 한글깨짐 방지
+```java
+@Override
+protected Filter[] getServletFilters() {    //import javax.servlet.Filter;
+    CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
+    characterEncodingFilter.setEncoding("UTF-8");
+    characterEncodingFilter.setForceEncoding(true);
+    
+    return new Filter[] {characterEncodingFilter};
 }
 ```

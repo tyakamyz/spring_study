@@ -82,7 +82,7 @@
     <groupId>log4j</groupId>
     <artifactId>log4j</artifactId>
     <version>1.2.17</version>	<!-- lombok 활용을 위해 버젼 1.2.17 사용 -->
-    <exclusions>
+    <!-- <exclusions>
         <exclusion>
             <groupId>javax.mail</groupId>
             <artifactId>mail</artifactId>
@@ -100,7 +100,7 @@
             <artifactId>jmxri</artifactId>
         </exclusion>
     </exclusions>
-    <scope>runtime</scope>
+    <scope>runtime</scope> -->
 </dependency>
 ```
 - junit 버전 변경
@@ -277,3 +277,22 @@ public class JDBCTests {
 		}
 	}
 }
+```
+> web.xml
+- UTF-8 필터 설정
+- 데이터 전송 시 한글깨짐 방지
+```xml
+<filter>
+    <filter-name>encoding</filter-name>
+    <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+    <init-param>
+        <param-name>encoding</param-name>
+        <param-value>UTF-8</param-value>
+    </init-param>
+</filter>
+
+<filter-mapping>
+    <filter-name>encoding</filter-name>
+    <servlet-name>appServlet</servlet-name>
+</filter-mapping>
+```
