@@ -188,6 +188,19 @@
 ```properties
 log4jdbc.spylogdelegator.name=net.sf.log4jdbc.log.slf4j.Slf4jSpyLogDelegator
 ```
+> root-context.xml
+- log4jdbc 사용할 수 있도록 변경
+- sql 결과가 보기좋게 표시됨
+```xml
+<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
+		<!-- <property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"></property> -->
+		<!-- <property name="jdbcUrl" value="jdbc:oracle:thin:@tongracle.cnsqtfo00xiq.ap-northeast-2.rds.amazonaws.com:1521:orcl"></property> -->
+		<property name="driverClassName" value="net.sf.log4jdbc.sql.jdbcapi.DriverSpy"></property>
+		<property name="jdbcUrl" value="jdbc:log4jdbc:oracle:thin:@tongracle.cnsqtfo00xiq.ap-northeast-2.rds.amazonaws.com:1521:orcl"></property>
+		<property name="username" value="book_ex"></property>
+		<property name="password" value="book_ex"></property>
+	</bean> 
+```
 > DataSourceTests.java
 - DataSource 테스트
 - src/test/java/....../DataSourceTests.java
