@@ -563,7 +563,8 @@ WHERE
     - 처음부터 해당 페이지의 데이터를 'ROWNUM <= 30'과 같은 조건을 이용해서 구한다.
     - 구해놓은 데이터를 하나의 테이블처럼 간주하고 인라인뷰로 처리한다.
     - 인라인뷰에서 필요한 데이터만을 남긴다.
-## **Chapter 13** MyBatis와 스프링에서 페이징 처리
+
+
  - 페이징 처리를 위해 필요한 파라미터
     - 페이지 번호(pageNum)
     - 한 페이지당 몇개의 데이터(amount)를 보여줄 것인지
@@ -591,3 +592,85 @@ public class Criteria {
 }
 ```
 - this(1,10)으로 생성자를 통해 기본값을 지정할 수 있다.
+
+## **Chapter 14** 페이징 화면 처리
+
+- 페이지를 보여주는 작업 과정
+    - 브라우저 주소창에서 페이지 번호를 전달해서 결과를 확인하는 단계
+    - JSP에서 페이지 번호를 출력하는 단계
+    - 각 페이지 번호에 클릭 이벤트 처리
+    - 전체 데이터 개수를 반영해서 페이지 번호 조절
+- 페이지에서 조회, 수정/삭제 페이지 까지 페이지 번호가 계소해서 유지되어야만 하기 때문에 끝까지 신경써야할 부분이 많다.
+
+### 14.1 페이징 처리할 때 필요한 정보들
+ - 화면에 페이징 처리를 위해 필요한 정보
+    - 현재 페이지 번호(page)
+    - 이전과 다음으로 이동가능한 링크의 표시 여부(prev, next)
+    - 화면에서 보여지는 페이지의 시작 번호와 끝 번호(startPage, endPage)
+ - 일반적으로 페이지 계산할 때 시작번호를 먼저하려고 하지만, 오히려 끝 번호를 해 두는 것이 수월하다.
+    - 끝 번호 공식(한번에 보여지는 페이지가 10페이지일 경우 10.0으로 나눈다.)
+        ```java
+        this.endPage = (int)(Math.ceil(페이지번호 / 10.0(한번에보여지는 페이지갯수))) * 10;
+        ```
+    - 시작 번호 (한번에 보여지는 페이지가 10일 경우 위의 끝번호에서 -9)
+        ```java
+        this.startPage = this.endPage - 9;
+        ```
+ - 만일 끝번호와 한페이지당 출력되는 데이터수의 곱이 전체 데이터 수보다 크다면 끝 번호는 다시 total을 이요해서 계산되어야 한다.
+    - total을 통한 끝 번호 재계산
+        ```java
+        realEnd = (int)(Math.ceil(total * 1.0) / amount));
+
+        if(realEnd < this.endPage){
+            this.endPage = realEnd;
+        })
+        ```
+#### 14.2 이전(prev) 과 다음(next)
+
+- 이전 계산 ( 시작 번호가 1보다 큰 경우 존재)
+    ```java
+    this.prev = this.startPage > 1;
+    ```
+- 다음 계산 (위의 realEnd가 끝 번호(endPage)보다 큰 경우 존재)
+    ```java
+    this.next = this.endPage < realEnd;
+    ```
+
+### 14.2 페이지 번호 이벤트 처리
+ - 일반적으로 \<a> 태그의 href 속성을 이용하는 방법을 사용하 수 도 있지만, 직접 링크를 처리하는 방식의 경우 검색 조건이 붙고 난 후에 처리가 복잡하게 되므로 JavaScript를 통해서 처리하는 방식을 이용한다.
+ - JavaSciprt Function
+    ```js
+    var actionForm = $("#actionForm");
+	
+	$(".paginate_button a").on('click', function(e){
+		
+		e.preventDefault();
+		
+		console.log('click');
+		
+		actionForm.find("input[name='pageNum']").val($(this).attr("href"));
+		actionForm.submit();
+	});
+    ```
+     - e.preventDefault() 함수 
+        - \<a> 의  href, \<button> 의 submit 과 같은 페이지 이동의 작동을 중지시키는 함수
+### 14.3 조회 페이지로 이동
+- 1페이지가 아닌 다른 페이지에서 조회 후 다시 목록으로 이동하면 무조건 1페이지로 이동하는 증상이 일어난다. 이를 해결하기 위해 조회 페이지로 갈때 현재 목록 페이지의 pageNum과 amount를 같이 전달해야 한다.
+
+### 14.4 수정 페이지에서 리스트로 이동
+ ```js
+ else if(operation === 'list'){
+	 			//move to list
+	 			formObj.attr("action","/board/list").attr("method","get");
+	 			
+	 			var pageNumTag = $("input[name='pageNum']").clone();
+	 			var amountTag = $("input[name='amount']").clone();
+	 			
+	 			formObj.empty();
+	 			formObj.append(pageNumTag);
+	 			formObj.append(amountTag);
+	 		}
+ ```
+ - 기존의 formObj.empty() 에서 리스트로 갈때 다비워둔 채로 가져갔지만 필요한 수정전의 pageNum과 amount을 가지고 이동한다.
+
+ ## **Chapter 15** 검색 처리
