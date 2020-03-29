@@ -30,6 +30,7 @@ public class BoardServiceImpl implements BoardService {
  * BoardMapper 객체를 @Setter 어노테이션(Lombok)으로  처리하여 ServicecImpl를 동작
  * @AllArgsConstructor : spring 4.3 이상에서 사용가능하며 , 모든 파라미터를 이용하는 생성자를 만든다.
 
+<br>
 
  **< 빈 인식을 위한 서비스 객체 설정 >**   
 
