@@ -210,7 +210,7 @@ var formObj = $("form");
 			var pageNumTag 	= $("input[name='pageNum']").clone();
 			var amountTag 	= $("input[name='amount']").clone();
             
-            // 데이터를 비우고 필요한 pagenum과 amount 만 다시 넣는다.
+            		// 데이터를 비우고 필요한 pagenum과 amount 만 다시 넣는다.
 			formObj.empty();
 			formObj.append(pageNumTag);
 			formObj.append(amountTag);
