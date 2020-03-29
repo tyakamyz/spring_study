@@ -11,7 +11,7 @@
 ### Naming 
 - Controller : 컨트롤러단
 - Service, ServiceImpl : 비즈니스 영역을 담당하는 인터페이스와 인터페이스를 구현한 클래스 
-- DAO, Repository 
+- DAO, Repository : Mapper 인텉페이스 (예제사용)
 - VO, DTO : 데이터를 담고 있는 객체    
             (VO : ReadOnly 목적, 데이터 자체도 불변하게 설계   
             DTO : 데이터 수집의 용도. 예로 로그인 정보 처리)
