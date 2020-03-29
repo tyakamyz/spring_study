@@ -186,3 +186,35 @@ jsp
     <input type='hidden' name='amount' 	value='<c:out value="${cri.amount }"/> '>
 </form>    
 ```
+
+javascript
+```javascript
+// 수정/삭제 페이지에서 목록페이지 이동시 
+var formObj = $("form");
+	
+	$('button').on("click", function(e){
+		
+		// form 태그의 기본 동작인 submit으로 처리 되는것을 방지 
+		e.preventDefault();
+		
+		// 버튼 태그의 data-oper 속성을 통해 원하는 기능 처리 
+		var operation = $(this).data("oper");
+		
+		if(operation === 'remove') {
+			formObj.attr("action", "/board/remove");
+		}else if(operation === 'list') {
+			// move to list
+			formObj.attr("action", "/board/list").attr("method", "get");
+			
+			// clone: 잠시복사
+			var pageNumTag 	= $("input[name='pageNum']").clone();
+			var amountTag 	= $("input[name='amount']").clone();
+            
+            // 데이터를 비우고 필요한 pagenum과 amount 만 다시 넣는다.
+			formObj.empty();
+			formObj.append(pageNumTag);
+			formObj.append(amountTag);
+		}
+		formObj.submit();
+	});
+```
