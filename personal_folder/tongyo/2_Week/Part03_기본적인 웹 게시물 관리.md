@@ -583,3 +583,576 @@ public class BoardController {
 		<beans:property name="suffix" value=".jsp" />
 	</beans:bean>
 ```
+--------------
+> ## ch12. 오라클 데이터베이스 페이징 처리
+- SQL 실행 순서
+    1. SQL 파싱
+        - SQL 구문에 오류가 있는지 SQL을 실행해야 하는 대상 객체(테이블, 제약 조건, 권한 등)가 존재하는지 검사
+    2. SQL 최적화
+        - SQL 파싱을 통해 계산된 결과 값을 기초로 실행계획(execuion plan)을 세우게 됨
+    3. SQL 실행
+        - SQL 최적화 단계에서 세워진 실행 계획을 통해서 메모리상에서 데이터를 읽거나 물리적인 공간에서 데이터를 로딩하는 등의 작업을 함
+        - SQL Plus 등을 이용하여 특정한 SQL에 대한 실행 계획을 알아볼 수 있음<br>
+        (SQL Developer에서는 단축키 F10(실행계획))
+- 정렬 권장 방법
+    - order by를 통해 정렬할 경우 시간이 많이 소요됨
+    - 인덱스를 통해 정렬하는 것을 권장
+    ```sql
+    select /*+ INDEX_DESC(tbl_board pk_board) */
+    *
+    from tbl_board
+    where bno > 0;
+    ```
+-------
+> ## ch13. MyBatis와 스프링에서 페이징 처리
+- Criteria.java
+```java
+package org.zerock.domain;
+
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+@Getter
+@Setter
+@ToString
+public class Criteria {
+	private int pageNum;
+	private int amount;
+	
+	public Criteria() {
+		this(1,10);
+	}
+	
+	public Criteria(int pageNum, int amount) {
+		this.pageNum = pageNum;
+		this.amount = amount;
+	}
+}
+```
+- BoardMapper.java
+```java
+public List<BoardVO> getListWithPaging(Criteria cri);
+```
+- BoardMapper.xml
+```java
+<select id="getListWithPaging" resultType="org.zerock.domain.BoardVO">
+    <![CDATA[
+    select bno, title, content, writer, regdate, updatedate
+    from
+    (
+        select /*+INDEX_DESC(tbl_board, pk_board) */ 
+                rownum rn, bno, title, content, writer, regdate, updatedate
+        from tbl_board
+        where rownum < #{pageNum} * #{amount}
+    )
+    where rn > (#{pageNum}-1) * #{amount}
+    ]]>
+</select>
+```
+- BoardService.java
+```java
+//public List<BoardVO> getList();
+	
+public List<BoardVO> getList(Criteria cri);
+```
+- BoardServiceImpl.java
+```java
+//	@Override
+//	public List<BoardVO> getList() {
+//		log.info("getList.........");
+//		
+//		return mapper.getList();
+//	}
+
+@Override
+public List<BoardVO> getList(Criteria cri) {
+    log.info("get List with criteria : " + cri);
+    
+    return mapper.getListWithPaging(cri);
+}
+```
+- BoardControler.java
+```java
+@GetMapping("/list")
+public void list(Criteria cri ,Model model) {
+    log.info("list");
+    
+    model.addAttribute("list", service.getList(cri));
+}
+```
+> ## ch14. 페이징 화면처리
+- '../Memo/Spring or Java/Paging공식.md' 파일 참조
+----------
+> ## ch15. 검색처리
+- MyBatis의 동적 태그들
+    - if
+    - choose (when, otherwise)
+    - trim (where, set)
+    - foreach
+- Criteria.java
+```java
+package org.zerock.domain;
+
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+@Getter
+@Setter
+@ToString
+public class Criteria {
+	private int pageNum;
+	private int amount;
+	
+	private String type;
+	private String keyword;
+	
+	public Criteria() {
+		this(1,10);
+	}
+	
+	public Criteria(int pageNum, int amount) {
+		this.pageNum = pageNum;
+		this.amount = amount;
+	}
+	
+	public String[] getTypeArr() {
+		return type == null ? new String[] {} : type.split("");
+	}
+}
+```
+- mapper.xml (sql 정의 전)
+```xml
+<select id="getListWithPaging" resultType="org.zerock.domain.BoardVO">
+    <![CDATA[
+    select bno, title, content, writer, regdate, updatedate
+    from
+    (
+        select /*+INDEX_DESC(tbl_board, pk_board) */ 
+                rownum rn, bno, title, content, writer, regdate, updatedate
+        from tbl_board
+        where
+    ]]>
+        <trim prefix="(" suffix=") AND " prefixOverrides="OR">
+            <foreach item='type' collection="typeArr">
+                <trim prefix="OR">
+                    <choose>
+                        <when test="type == 'T'.toString()">
+                            title like '%'||#{keyword}||'%'
+                        </when>
+                        <when test="type == 'C'.toString()">
+                            content like '%'||#{keyword}||'%'
+                        </when>
+                        <when test="type == 'W'.toString()">
+                            writer like '%'||#{keyword}||'%'
+                        </when>
+                    </choose>
+                </trim>
+            </foreach>
+        </trim> 
+    <![CDATA[
+        rownum < #{pageNum} * #{amount}
+    )
+    where rn > (#{pageNum}-1) * #{amount}
+    ]]>
+</select>
+```
+- mapper.xml (sql 정의 후)
+    - 중복되는 조건 쿼리는 따로 \<sql>이라는 태그를 통해 재사용이 가능
+    ```xml
+    <sql id="criteria">
+		<trim prefix="(" suffix=") AND " prefixOverrides="OR">
+			<foreach item='type' collection="typeArr">
+				<trim prefix="OR">
+					<choose>
+						<when test="type == 'T'.toString()">
+							title like '%'||#{keyword}||'%'
+						</when>
+						<when test="type == 'C'.toString()">
+							content like '%'||#{keyword}||'%'
+						</when>
+						<when test="type == 'W'.toString()">
+							writer like '%'||#{keyword}||'%'
+						</when>
+					</choose>
+				</trim>
+			</foreach>
+		</trim> 
+	</sql>
+
+    <select id="getListWithPaging" resultType="org.zerock.domain.BoardVO">
+		<![CDATA[
+		select bno, title, content, writer, regdate, updatedate
+		from
+		(
+			select /*+INDEX_DESC(tbl_board, pk_board) */ 
+					rownum rn, bno, title, content, writer, regdate, updatedate
+			from tbl_board
+			where
+		]]>
+		
+			<include refid="criteria"></include>
+			
+		<![CDATA[
+			rownum <= #{pageNum} * #{amount}
+		)
+		where rn > (#{pageNum}-1) * #{amount}
+		]]>
+	</select>
+	
+	<select id="getTotalCount" resultType="int">
+		select count(*) from tbl_board 
+		where 
+		
+		<include refid="criteria"></include>
+		
+		bno > 0
+	</select>
+    ```
+- list.jsp (문제점 해결)
+    - 검색 시 페이지가 그대로 유지되는 문제
+    - 검색 후 페이지를 이동하면 검색 조건 초기화되는 문제
+    - 검색 후 화면에서 어떤 검색 조건과 키워드를 사용했는지 알 수 없는 문제
+```jsp
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+	
+<%@include file="../includes/header.jsp"%>
+
+<script type="text/javascript">
+$(document).ready(function(){
+	var result = '<c:out value="${result}" />';
+	
+	/* 검색 버튼 이벤트 처리 */
+	var searchForm = $("#searchForm");
+	
+	$("#searchForm button").on("click", function(e){
+		if(!searchForm.find("option:selected").val()){
+			alert("검색종류를 선택하세요");
+			return false;
+		}
+		
+		if(!searchForm.find("input[name='keyword']").val()){
+			alert("키워드를 입력하세요");
+			return false;
+		}
+		
+		searchForm.find("input[name='pageNum']").val("1");
+		e.preventDefault();
+		
+		searchForm.submit();
+	});
+	/* 검색 버튼 이벤트 처리 종료 */
+	
+	checkModal(result);
+	
+	history.replaceState({},null,null);
+	
+	function checkModal(result){
+		if(result === '' || history.state){
+			return;
+		}
+		
+		if(parseInt(result) > 0){
+			$(".modal-body").html("게시글 " + parseInt(result) + "번이 등록되었습니다.");
+		}
+		
+		$("#myModal").modal("show");
+	}
+	
+	$("#regBtn").on("click", function(){
+		self.location = "/board/register";
+	});
+	
+	/* 페이징 처리 */
+	var actionForm = $("#actionForm");
+	
+	$(".paginate_button a").on("click", function(e){
+		e.preventDefault();
+		
+		console.log("click");
+		
+		actionForm.find("input[name='pageNum']").val($(this).attr("href"));
+		actionForm.submit();
+	});
+	/* 페이징 처리 종료 */
+	
+	/* 조회 페이지 이동 */
+	$(".move").on("click", function(e){
+		e.preventDefault();
+		
+		actionForm.append("<input type='hidden' name='bno' value='"+ $(this).attr("href")+ "'>");
+		actionForm.attr("action", "/board/get");
+		actionForm.submit();
+	});
+	/* 조회 페이지 이동 종료 */
+	
+});
+</script>
+<!-- /.row -->
+<div class="row">
+	<div class="col-lg-12">
+		<h1 class="panel-heading">Tables</h1>
+	</div>
+</div>
+<!-- /.row -->
+<div class="row">
+	<div class="col-lg-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">Board List Page
+				<button id="regBtn" type="button" class="btn btn-xs pull-right">Register New Board</button>
+			</div>
+			<!-- /.panel-heading -->
+			<div class="panel-body">
+				<table class="table table-striped table-bordered table-hover">
+					<thead>
+						<tr>
+							<th>#번호</th>
+							<th>제목</th>
+							<th>작성자</th>
+							<th>작성일</th>
+							<th>수정일</th>
+						</tr>
+					</thead>
+					<tbody>
+						<c:forEach items="${list}" var="board">
+						<tr>
+							<td><c:out value="${board.bno}" /></td>
+							<td><a class="move" href="<c:out value='${board.bno}' />"><c:out value="${board.title}" /></a></td>
+							<td><c:out value="${board.writer}" /></td>
+							<td><fmt:formatDate pattern="yyyy-MM-dd" value="${board.regdate}" /></td>
+							<td><fmt:formatDate pattern="yyyy-MM-dd" value="${board.updateDate}" /></td>
+						</tr>
+						</c:forEach>
+					</tbody>
+				</table>
+				<!-- 검색 조건 추가 -->
+				<form id='searchForm' action="/board/list" method='get'>
+					<select name='type'>
+						<option value=""
+							<c:out value="${pageMaker.cri.type == null?'selected':''}"/>>--</option>
+						<option value="T"
+							<c:out value="${pageMaker.cri.type eq 'T'?'selected':''}"/>>제목</option>
+						<option value="C"
+							<c:out value="${pageMaker.cri.type eq 'C'?'selected':''}"/>>내용</option>
+						<option value="W"
+							<c:out value="${pageMaker.cri.type eq 'W'?'selected':''}"/>>작성자</option>
+						<option value="TC"
+							<c:out value="${pageMaker.cri.type eq 'TC'?'selected':''}"/>>제목
+							or 내용</option>
+						<option value="TW"
+							<c:out value="${pageMaker.cri.type eq 'TW'?'selected':''}"/>>제목
+							or 작성자</option>
+						<option value="TWC"
+							<c:out value="${pageMaker.cri.type eq 'TWC'?'selected':''}"/>>제목
+							or 내용 or 작성자</option>
+					</select> 
+					<input type='text' name='keyword' value='<c:out value="${pageMaker.cri.keyword}"/>' />
+					<input type='hidden' name='pageNum' value='<c:out value="${pageMaker.cri.pageNum}"/>' />
+					<input type='hidden' name='amount' value='<c:out value="${pageMaker.cri.amount}"/>' />
+					<button class='btn btn-default'>Search</button>
+				</form>
+				<!-- Paging 추가 -->
+				<div class="pull-right">
+					<ul class="pagination">
+						<c:if test="${pageMaker.prev}">
+							<li class="paginate_button previous"><a href="${pageMaker.startPage - 1}">Previous</a></li>
+						</c:if>
+						<c:forEach var="num" begin="${pageMaker.startPage}" end="${pageMaker.endPage}">
+							<li class="paginate_button ${pageMaker.cri.pageNum==num ? 'active':''} "><a href="${num}">${num}</a></li>
+						</c:forEach>
+						<c:if test="${pageMaker.next}">
+							<li class="paginate_button next"><a href="${pageMaker.endPage + 1}">Next</a></li>
+						</c:if>
+					</ul>
+				</div>
+				<form id="actionForm" action="/board/list" method="get">
+					<input type="hidden" name="pageNum" value="${pageMaker.cri.pageNum}">
+					<input type="hidden" name="amount" value="${pageMaker.cri.amount}">
+					<input type='hidden' name='type' value='<c:out value="${pageMaker.cri.type}"/>' />
+					<input type='hidden' name='keyword' value='<c:out value="${pageMaker.cri.keyword}"/>' />
+				</form>
+				<!-- Modal 추가 -->
+				<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                      <div class="modal-content">
+                          <div class="modal-header">
+                              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                              <h4 class="modal-title" id="myModalLabel">Modal title</h4>
+                          </div>
+                          <div class="modal-body">
+                              처리가 완료되었습니다.
+                          </div>
+                          <div class="modal-footer">
+                              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                          </div>
+                      </div>
+                      <!-- /.modal-content -->
+                  </div>
+                  <!-- /.modal-dialog -->
+              </div>
+              <!-- /.modal -->
+			</div>
+		</div>
+	</div>
+</div>
+<%@include file="../includes/footer.jsp"%>
+```
+- get.jsp, modify.jsp
+    - form안에 추가해줘야 함
+```jsp
+<input type='hidden' name='type' value='<c:out value="${cri.type}"/>' />
+<input type='hidden' name='keyword' value='<c:out value="${cri.keyword}"/>' />
+```
+- BoardController.java
+    - redirect 시 검색조건을 함께 넘겨줘야 함
+```java
+@PostMapping("/modify")
+public String modify(BoardVO board, @ModelAttribute("cri") Criteria cri, RedirectAttributes rttr) {
+    log.info("modify: " + board);
+    
+    if(service.modify(board)) {
+        rttr.addFlashAttribute("result", "success");
+    }
+    
+    rttr.addFlashAttribute("pageNum", cri.getPageNum());
+    rttr.addFlashAttribute("amount", cri.getAmount());
+    rttr.addFlashAttribute("type", cri.getType());
+    rttr.addFlashAttribute("keyword", cri.getKeyword());
+    
+    return "redirect:/board/list";
+}
+
+@PostMapping("/remove")
+public String remove(@RequestParam("bno") Long bno, @ModelAttribute("cri") Criteria cri, RedirectAttributes rttr) {
+    log.info("remove....." + bno);
+    
+    if(service.remove(bno)) {
+        rttr.addFlashAttribute("result", "success");
+    }
+    
+    rttr.addFlashAttribute("pageNum", cri.getPageNum());
+    rttr.addFlashAttribute("amount", cri.getAmount());
+    rttr.addFlashAttribute("type", cri.getType());
+    rttr.addFlashAttribute("keyword", cri.getKeyword());
+    
+    return "redirect:/board/list";
+}
+```
+- modify.jsp
+    - 파라미터 전송 부분 역시 수정이 필요
+```jsp
+<script type="text/javascript">
+$(document).ready(function(){
+	var formObj = $("form");
+	
+	$('button').on("click", function(e){
+		e.preventDefault();
+		
+		var operation = $(this).data("oper");
+		
+		console.log(operation);
+		
+		if(operation === 'remove'){
+			formObj.attr("action", "/board/remove");
+		}else if(operation === 'list'){
+			formObj.attr("action", "/board/list").attr("method", "get");
+			var pageNumTag = $("input[name='pageNum']").clone();
+			var amountTag = $("input[name='amount']").clone();			
+			var typeTag = $("input[name='type']").clone();			
+			var keywordTag = $("input[name='keyword']").clone();			
+			
+			formObj.empty();
+			formObj.append(pageNumTag);
+			formObj.append(amountTag);
+			formObj.append(typeTag);
+			formObj.append(keywordTag);
+		}
+		formObj.submit();
+	});
+});
+</script>
+```
+------------
+- UriComponentsBuilder를 이용하는 링크 생성
+    - 여러개의 파라미터들을 연결해서 uri의 형태로 만들어 주는 기능
+    - Criteria.java
+    ```java
+    package org.zerock.domain;
+
+    import org.springframework.web.util.UriComponentsBuilder;
+
+    import lombok.Getter;
+    import lombok.Setter;
+    import lombok.ToString;
+
+    @Getter
+    @Setter
+    @ToString
+    public class Criteria {
+        private int pageNum;
+        private int amount;
+        
+        private String type;
+        private String keyword;
+        
+        public Criteria() {
+            this(1,10);
+        }
+        
+        public Criteria(int pageNum, int amount) {
+            this.pageNum = pageNum;
+            this.amount = amount;
+        }
+        
+        public String[] getTypeArr() {
+            return type == null ? new String[] {} : type.split("");
+        }
+        
+        public String getListLink() {
+            UriComponentsBuilder builder = UriComponentsBuilder.fromPath("")
+                .queryParam("pageNum", this.pageNum)
+                .queryParam("amount", this.amount)
+                .queryParam("type", this.getType())
+                .queryParam("keyword", this.getKeyword());
+            return builder.toUriString();
+        }
+    }
+    ```
+    - BoardController.java
+    ```java
+    @PostMapping("/modify")
+	public String modify(BoardVO board, @ModelAttribute("cri") Criteria cri, RedirectAttributes rttr) {
+		log.info("modify: " + board);
+		
+		if(service.modify(board)) {
+			rttr.addFlashAttribute("result", "success");
+		}
+		
+		//rttr.addFlashAttribute("pageNum", cri.getPageNum());
+		//rttr.addFlashAttribute("amount", cri.getAmount());
+		//rttr.addFlashAttribute("type", cri.getType());
+		//rttr.addFlashAttribute("keyword", cri.getKeyword());
+		
+		return "redirect:/board/list" + cri.getListLink();
+	}
+	
+	@PostMapping("/remove")
+	public String remove(@RequestParam("bno") Long bno, @ModelAttribute("cri") Criteria cri, RedirectAttributes rttr) {
+		log.info("remove....." + bno);
+		
+		if(service.remove(bno)) {
+			rttr.addFlashAttribute("result", "success");
+		}
+		
+		//rttr.addFlashAttribute("pageNum", cri.getPageNum());
+		//rttr.addFlashAttribute("amount", cri.getAmount());
+		//rttr.addFlashAttribute("type", cri.getType());
+		//rttr.addFlashAttribute("keyword", cri.getKeyword());
+		
+		return "redirect:/board/list" + cri.getListLink();
+	}
+    ```
