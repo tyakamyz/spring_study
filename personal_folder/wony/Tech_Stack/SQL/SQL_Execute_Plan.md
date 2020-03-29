@@ -9,3 +9,8 @@
     - 계산된 값을 기초로 어떤 방식으로 실행하는 것이 좋은지 판단하는 '**실행 계획(execuion plan)**' 을 세운다.
  >  3. SQL 실행  
     - 세워진 실행 계획을 통해 메모리상에서 데이터를 읽거나 물리적인 공간에서 데이터를 로딩하는 등의 작업 진행
+
+- SQL Index 안잡힐 경우
+```sql
+analyze table tbl_board(table name) compute statistics;
+```
