@@ -674,3 +674,279 @@ public class Criteria {
  - 기존의 formObj.empty() 에서 리스트로 갈때 다비워둔 채로 가져갔지만 필요한 수정전의 pageNum과 amount을 가지고 이동한다.
 
  ## **Chapter 15** 검색 처리
+  - 검색 기능은 검색조건과 키워드로 나누어 생각할 수 있다.
+  - 검색 조건은 일반적으로 \<select> 태그를 이용해서 작성하거나 \<checkbox>를 이용하는 경우가 많다.
+  - 근래에 들어서는 일반 사용자들의 경우 \<select> 태그를, 관리자용이나 검색 기능이 강한 경우 \<checkbox>를 사용한다.
+
+  ### 15.1 검색기능과 SQL
+  - 게시물의 검색기능 분류
+    - 제목/내용/작성자와 같이 단일 항목 검색
+    - 제목 or 내용, 제목 or 작성자, 내용 or 작성자, 제목 or 내용 or 작성자와 같은 다중 항목 검색
+  - 오라클은 페이징 처리에 인라인 뷰를 이용하기 때문에 실제로 검색 조건에 대한 처리는 인라인뷰의 내부에서 이루어져야 한다.  
+
+  #### 15.1.1 다중 항목 검색
+  ```sql
+  select /*+INDEX_DESC(tbl_board, pk_board)*/ rownum rn, bno, title, content, writer, regdate, updatedate
+from tbl_board
+where title like ('%test%') or content like ('%test%') and rownum <= 20
+;
+```
+- 위의 SQL 구문자체에는 이상이 없지만 실제로 동작 시켜보면 20개 의 데이터가아닌 그이상의 데이터를 볼 수 있다.
+    - 위의 SQL구문에서는 AND 연산자가 OR연산자보다 우선순위가 높기 때문에 'ROWNUM이 20보다 작거나 같으며서(AND) 내용에 'test'라는 문자열이 있거나(OR) 제목에 'test'라는 문자열이 있는 게시물을 검색한다.
+ ### 15.2 MyBatis의 동적 태그들
+  - 동적 태그
+    - if
+    - choose(when, otherwise)
+    - trim(where, set)
+    - foreach
+ #### 15.2.1 \<if>  
+
+- if 는 test라는 속성과 함께 특정한 조건이 true가 되었을 때 포함된 SQL을 사용하고자 할 때 작성
+    - ex)
+    - 검색 조건이 'T'면 제목(title)이 키워드(keyword)인 항목 검색
+    - 검색 조건이 'C'면 내용(content)이 키워드(keyword)인 항목 검색
+    - 검색 조건이 'W'면 작성자(writer)이 키워드(keyword)인 항목 검색
+    
+        ```xml
+        <if test="type == 'T'.toString()">
+            (title like '%'||#{keyword}||'%')
+        </if>
+        <if test="type == 'C'.toString()">
+            (content like '%'||#{keyword}||'%")
+        </if>
+        <if test="type == 'W'.toString()">
+            (writer like '%'||#{keyword}||'%")
+        </if>
+        ```
+- if 안에 들어가는 표현식(expression)은 OGNL 표현식이라는 것을 이용한다.
+- 좀더 자세한 내용은 https://commons.apache.org/proper/commons-ognl/language-guide.html 참고
+
+#### 15.2.2 \<choose>
+- if와 달리 choose는 여러 상황들 중 하나의 상황에서만 동작한다.
+- Java의 'if ~ else' 나 JSTL의 \<choose>와 유사
+    ```xml
+    <choose>
+        <when test="type == 'T'.toString()">
+            (title like '%'||#{keyword}||'%')
+        </when>
+        <when test="type == 'C'.toString()">
+            (content like '%'||#{keyword}||'%')
+        </when>
+        <when test="type == 'W'.toString()">
+            (writer like '%'||#{keyword}||'%')
+        </when>
+        <otherwise>
+            (title like '%'||#{keyword}||'%' or content like '%'||#{keyword}||'%')
+        </otherwise>
+    </choose>
+    ```
+#### 15.2.3 \<trim>, \<where>, \<set>
+ - trim,where,set은 단독으로 사용되지 않고, \<if>, \<choose>와 같은 태그들을 내포하여 SQL들을 연결해 주고, 앞 뒤에 필요한 구문들(AND, OR, WHERE 등)을 추가하거나 생략하는 역할을 한다.
+- \<where>의 경우 태그 안 쪽에서 SQL이 생성될 때는 WHERE구문이 붙고, 그렇지 않은 경우에는 생성되지 않는다.
+    ```sql
+    select * frmo tbl_board
+    <where>
+        <if test="bno != null">
+            bno = #{bno}
+        </if>
+    </where>
+    ```
+    | | |
+    |--|--|
+    |bno값이 존재하는 경우 | select * from tbl_board WHERE bno = 33
+    |bno가 null인 경우|select * from tbl_board
+
+- \<trim>은 태그의 내용을 앞의 내용과 관련되어 원하는 접두/접미를 처리할 수 있다.
+    ```sql
+    select * from tbl_board
+    <where>
+        <if test="bno != null">
+            bno = #{bno}
+        </if>
+        <trim prefixOverrides ="and">
+            rownum = 1
+        </trim>
+    </where>
+    ```
+    - trim은 prefix, suffix, prefixOverrides, suffixOverrides 속성을 지정할 수 있다.  
+
+    | | |
+    |--|--|
+    |bno값이 존재하는 경우 | select * from tbl_board WHERE bno = 33 and rownum = 1
+    |bno가 null인 경우|select * from tbl_board WHERE rownum = 1
+ - \<foreach>는 List, 배열, 맵 등을 이용해서 루프를 처리할 수 있다.
+    - 주로 IN 조건에서 많이 사용하지만, 경우에 따라서는 복잡한 WHERE 조건을 만들 떄에도 사용할 수 있다.
+    - ex) 제목('T')은 'TTTT'로 내용('C')은 'CCCC'라는 값을 이용한다면 Map의 형태로 작성 가능
+    ```java
+        Map<String, String> map = new HashMap<>();
+        map.put("T", "TTTT");
+        map.put("C", "CCCC");
+    ```
+    - 작성된 Map을 파라미터로 전달하고, foreach를 이용
+    ```xml
+        <trim prefix="where (" suffix=")" prefixOverrides="OR">
+            <foreach item="val" index="key" collection="map">
+                <trim prefix = "or">
+                    <if test="key == 'C'.toString()">
+                        content = #{val}
+                    </if>
+                    <if test="key == 'T'.toString()">
+                        title = #{val}
+                    </if>
+                    <if test="key == 'W'.toString()">
+                        writer = #{val}
+                    </if>
+                </trim>
+            </foreach>
+        </trim>
+    ```
+    - foreach를 배열이나 List를 이용하는 경우에는 item 속성만을 이용하면 되고, Map의 형태로 key와 value를 이용해야 할 때는 index와 item 속성을 둘다 이용한다.
+
+ ### 15.3 Class 사용 - MyBatis(동적 쿼리)   
+ ```java
+ public String[] getTypeArr() {
+		
+		return type == null ? new String[] {} : type.split("");
+	}
+```
+```xml
+<trim prefix="where (" suffix=")" prefixOverrides="OR">
+    <foreach item="type" collection="typeArr">
+        <trim prefix="OR">
+            <choose>
+                <when test="type =='T'.toString()">
+                    title like '%'||#{keyword}||'%'
+                </when>
+                <when test="type =='C'.toString()">
+                    content like '%'||#{keyword}||'%'
+                </when>
+                <when test="type =='W'.toString()">
+                    writer like '%'||#{keyword}||'%'
+                </when>
+            </choose>
+        </trim>
+    </foreach>
+</trim>
+```
+- foreach 를 이용해서 검색 조건을 처리하는데 typeArr이라는 속성을 사용한다
+- MyBatis는 원하는 속성을 찾을 떄 getTypeArr()과 같이 이름에 기반을 두어서 검색하기 때문에 Class에서 만들어둔 getTypeArr() 결과인 문자열의 배열이 \<foreach>의 대상이 된다.
+- MyBatis는 엄격하게 Java Beans의 규칙을 따르지 않고, get/set 메서드만을 활용하는 방식이다.
+
+### 15.4 \<sql> \<include> 와 검색 데이터의 개수 처리
+- 동적 SQL을 이용해서 검색 조건을 처리하는 부분은 해당 데이터의 개수를 처리하는 부분에서도 동일하게 적용되어야만 한다. 
+    - 가장 간단한 방법으로 동적 SQL을 처리하는 부분을 그대로 복사
+    - 하지만 동적 SQL을 수정하는 경우에는 여러번의 수정작업이 필요
+ - MyBatis는 \<sql> 이라는 태그를 이용해서 SQL의 일부를 별도로 보관하고, 필요한 경우에 include 시키는 형태로 사용할 수 있다.
+
+- \<sql> 변환
+ ```xml
+ <sql id="criteria">
+		<trim prefix="where (" suffix=") AND" prefixOverrides="OR">
+            <foreach item="type" collection="typeArr">
+            	<trim prefix="OR">
+            		<choose>
+            			<when test="type =='T'.toString()">
+            				title like '%'||#{keyword}||'%'
+            			</when>
+            			<when test="type =='C'.toString()">
+            				content like '%'||#{keyword}||'%'
+            			</when>
+            			<when test="type =='W'.toString()">
+            				writer like '%'||#{keyword}||'%'
+            			</when>
+            		</choose>
+            	</trim>
+            </foreach>
+        </trim>
+	</sql>
+ ```  
+- \<sql> -> \<include> 적용
+
+ ```xml
+ <select id="getListWithPaging" resultType="org.zerock.domain.BoardVO">
+		<![CDATA[
+		select
+			bno, title, content, writer, regdate, updatedate
+		from
+			(
+			select /*+INDEX_DESC(tbl_board pk_board) */
+			 rownum rn, bno, title, content, writer, regdate, updatedate
+		 	from
+			  tbl_board
+		]]>
+
+		<include refid="criteria"></include>
+
+		<![CDATA[
+			rownum <= #{pageNum} * #{amount}
+			)
+		where rn > (#{pageNum} -1) * #{amount}
+		]]>
+	</select>
+ ```
+
+ ### 15.5 화면에서 검색 조건 처리
+ - 주의 사항
+    - 페이지 번호가 파라미터로 유지되었던 것처럼 검색 조건과 키워드 역시 항상 화면 이동 시 같이 전송되어야 한다.
+    - 화면에서 검색 버튼을 클릭하면 새로 검색을 한다는 의미이므로 1페이지로 이동한다.
+    - 한글의 경우 GET 방식으로 이동하는 경우 문제가 생길 수 있으므로 주의 한다.
+ - 검색이 처리된 후 문제점들
+    - 3페이지를보다 검색을 하면 3페이지로 이동하는 문제
+    - 검색 후 페이지를 이동하면 검색 조건이 사라지는 문제
+    - 검색 후 화면에서는 어떤 검색 조건과 키워들 이용했는지 알 수 없는 문제
+
+#### 15.5.1 UriComponentsBuilder를 이용하는 링크 생성
+ - 웹페이지에서 매번 파라미터를 유지하는 일이 번거롭고 힘들다면 한 번쯤 UriComponentsBuilder라는 클래스를 이용해볼 필요가 있다.
+ - org.springframework.web.util.UriComponentsBuilder는 여러 개의 파라미터들을 연결해서 URL의 형태로 만들어주는 기능을 가지고 있다.
+- URL을 만들어주면 redirect를 하거나, \<form> 태그를 사용하는 상황을 많이 줄여줄 수 있다.
+```java
+public String getListLink() {
+    
+    UriComponentsBuilder builder = UriComponentsBuilder.fromPath("")
+            .queryParam("pageNum", this.pageNum)
+            .queryParam("amount", this.amount)
+            .queryParam("type", this.type)
+            .queryParam("keyword", this.keyword);
+    
+    return builder.toUriString();
+}
+```
+ - GET방식에 적합한 URL 인코딩된 결과로 만들수있다.
+ - 한글 처리에 신경을 않써도 된다.
+
+ - 사용 예제
+    - 사용 전
+    ```java
+    @PostMapping("/modify")
+	public String modify(BoardVO board, @ModelAttribute("cri") Criteria cri, RedirectAttributes rttr) {
+		
+		log.info("modify : " + board);
+		
+		if(service.modify(board)) {
+			rttr.addFlashAttribute("result", "success");
+		}
+		
+		rttr.addAttribute("pageNum", cri.getPageNum());
+		rttr.addAttribute("amount", cri.getAmount());
+		rttr.addAttribute("type", cri.getType());
+		rttr.addAttribute("keyword", cri.getKeyword());
+		
+		return "redirect:/board/list";
+	}
+    ```
+    - 사용 후
+    ```java
+    @PostMapping("/modify")
+	public String modify(BoardVO board, @ModelAttribute("cri") Criteria cri, RedirectAttributes rttr) {
+		
+		log.info("modify : " + board);
+		
+		if(service.modify(board)) {
+			rttr.addFlashAttribute("result", "success");
+		}
+		
+		return "redirect:/board/list" + cri.getListLink();
+	}
+    ```
+
+ - UriComponentsBuidler로 생성된 URL은 화면에서도 유용하게 사용될 수 있는데, 주로 JavaScript를 사용할 수 없는 상황에서 링크를 처리해야하는 상황에서 사용된다.
