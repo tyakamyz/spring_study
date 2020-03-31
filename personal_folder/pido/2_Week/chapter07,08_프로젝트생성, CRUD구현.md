@@ -20,12 +20,12 @@
 -----------------
 **- XML 기반 설정 -**     
 pom.xml, root-context.xml
-> [☝ XML 관련 설정 소스 참고](https://github.com/tyakamyz/spring_study/blob/master/personal_folder/tongyo/Memo/Spring%20Legacy%20Project_%EC%85%8B%ED%8C%85(xml%20version).md)
+> [☝ XML 관련 설정 소스 참고](https://github.com/tyakamyz/spring_study/blob/master/personal_folder/tongyo/Memo/Spring%20or%20Java/Spring%20Legacy%20Project_%EC%85%8B%ED%8C%85(xml%20version).md)
 
 
 **- JAVA 기반 설정 -**  
 pom.xml, rootConfig.java, ServletConfig.java, WebConfig.java
-> [☝ JAVA 관련 설정 소스 참고](https://github.com/tyakamyz/spring_study/blob/master/personal_folder/tongyo/Memo/Spring%20Legacy%20Project_%EC%85%8B%ED%8C%85(java%20version).md)
+> [☝ JAVA 관련 설정 소스 참고](https://github.com/tyakamyz/spring_study/blob/master/personal_folder/tongyo/Memo/Spring%20or%20Java/Spring%20Legacy%20Project_%EC%85%8B%ED%8C%85(java%20version).md)
 
 
 **- ORACLE -**  
