@@ -86,9 +86,9 @@ public class SampleVO {
    ```
 - 내부적으로 1~10미만까지 루프를 처리하면서 SampleVO객체를 만들어서 List<SampleVO>로 만들어 낸다.
   - json
-<img src="../img/sample_getList.png"></br>
+<img src="../img/sample_getList.png" height="500px"></br>
   - xml  
-<img src="../img/sample_getList_json.png" height="500px"></br></br>
+<img src="../img/sample_getList_json.png"></br></br>
 
 - Map 반환
 ```java
