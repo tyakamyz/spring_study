@@ -116,12 +116,6 @@
 ```xml
 <dependency>
     <groupId>javax.servlet</groupId>
-    <artifactId>servlet-api</artifactId> <!-- javax.servlet-api로 표기되어있을 수 있음 -->
-    <version>3.1.0</version>
-    <scope>provided</scope>
-</dependency>
-<dependency>
-    <groupId>javax.servlet</groupId>
     <artifactId>javax.servlet-api</artifactId><!-- servlet-api로 표기되어있을 수 있음. 변경해줌 -->
     <version>3.1.0</version>
     <scope>provided</scope>
