@@ -64,3 +64,8 @@ public class SampleVO {
   
  - @AllArgsConstructor 모든속성을 사용하는 생성자 어노테이션
  - @NoArgsConstructor 비어있는 생성자를 만드는 어노테이션
+
+<img src="../img/star.jpg" width="450px" height="300px" title="별자리" alt="star"></img><br/>
+
+ ![별자리](../img/star.jpg)
+ 
