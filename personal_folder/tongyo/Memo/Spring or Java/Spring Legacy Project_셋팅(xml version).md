@@ -103,6 +103,27 @@
     <scope>runtime</scope> -->
 </dependency>
 ```
+- jackson-databind / jackson-dataformat-xml
+```xml
+<!-- 객체를 JSON/XML로 변환할 때 사용 -->
+<dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+    <version>2.9.6</version>
+</dependency>
+<dependency>
+    <groupId>com.fasterxml.jackson.dataformat</groupId>
+    <artifactId>jackson-dataformat-xml</artifactId>
+    <version>2.9.6</version>
+</dependency>
+
+<!-- JAVA 인스턴스를 JSON 타입의 문자열로 변환(테스트 용도) -->
+<dependency>
+    <groupId>com.google.code.gson</groupId>
+    <artifactId>gson</artifactId>
+    <version>2.8.2</version>
+</dependency>
+```
 - junit 버전 변경
 ```xml
 <dependency>
