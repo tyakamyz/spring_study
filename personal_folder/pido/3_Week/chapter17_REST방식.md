@@ -31,8 +31,8 @@ REST 방식
 * 이를 JSON이나 XML 로 자동 처리 가능.   
 <br>
     1-1. pom.xml 설정 추가   
-    
-    ```xml
+
+    ```xml   
     <!-- 브라우저에 객체를 JSON 포맷으로 변환시켜 전송 -->
     <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
@@ -56,7 +56,8 @@ REST 방식
     ```
     <br>
     
-    1-2. 단순 문자열 변환
+    1-2. 단순 문자열 변환   
+
     ```java
     @RestController
     @RequestMapping("/sample")
@@ -76,7 +77,8 @@ REST 방식
     - MediaType 클래스로 MIME 타입 명시 가능
     - 문자열 return 시 기존의 @Controller처럼 JSP파일 이름이 아닌 순수한 데이터 return 
 
-    → 결과 확인 시, 텍스트 형태의 결과를 확인 할 수 있음.
+    → 결과 확인 시, 텍스트 형태의 결과를 확인 할 수 있음.   
+
     ```
     // 크롬 개발자모드에서 실제 데이터 확인 가능
     ▼ Response Headers 
@@ -87,7 +89,7 @@ REST 방식
     <br>
     1-3. 객체 반환(XML, JSON)   
 
-    VO
+    VO   
     ```java
     @Data
     @AllArgsConstructor	// 모든 속성을 사용하는 생성자를 위한 어노테이션
@@ -101,7 +103,7 @@ REST 방식
     }
     ```
 
-    Controller
+    Controller   
     ```java
     @GetMapping(value="/getSample", produces= { MediaType.APPLICATION_JSON_UTF8_VALUE,
 												MediaType.APPLICATION_XML_VALUE })
@@ -112,7 +114,7 @@ REST 방식
     ```
     → localhost:8080/sample/getText 결과 확인 시, XML 구조의 데이터를 확인할 수 있음.
 
-    ```
+    ```   
     // 크롬 개발자모드에서 실제 데이터 확인 가능
     ▼ Response Headers 
         Connection: keep-alive
@@ -127,7 +129,7 @@ REST 방식
     1-4. 객체 반환(컬렉션)   
 
     열, 리스트 타입의 객체 전송 
-    ```java
+    ```java   
 	@GetMapping(value="/getList")
 	public List<SampleVO> getList(){
 		return IntStream.range(1,10).mapToObj(i -> new SampleVO(i, i + "First", i + " Last")).collect(Collectors.toList());
