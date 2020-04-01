@@ -29,9 +29,8 @@ REST 방식
 * Controller에서 모든 메서드의 리턴 타입을 기존과 다르게 처리한다는 것을 명시.   
 * 메서드의 리턴 타입으로 사용자가 정의한 클래스 타입 사용 가능.    
 * 이를 JSON이나 XML 로 자동 처리 가능.   
-<br>
-    1-1. pom.xml 설정 추가   
 
+    1-1. pom.xml 설정 추가   
     ```xml   
     <!-- 브라우저에 객체를 JSON 포맷으로 변환시켜 전송 -->
     <dependency>
@@ -54,10 +53,8 @@ REST 방식
         <version>2.9.6</version>
     </dependency>
     ```
-    <br>
-    
-    1-2. 단순 문자열 변환   
-
+        
+    1-2. 단순 문자열 변환      
     ```java
     @RestController
     @RequestMapping("/sample")
