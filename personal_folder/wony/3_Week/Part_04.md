@@ -100,7 +100,7 @@ public class SampleVO {
 		return map;
 	}
 ```
-  - json
+  - json  
 <img src="../img/sample_getMap.png"></br>
   - xml  
 <img src="../img/sample_getMap_json.png"></br>
@@ -259,3 +259,13 @@ public class SampleControllerTests {
 |삭제|DELETE|/member/{id}
 
 ## **Chapter 17** Ajax 댓글 처리
+
+###17.1 @Param어노테이션과 댓글 목록
+
+- MyBatis에서 두 개 이상의 데이터를 파라미터로 전달하는 방법
+	- 별도의 객체로 구성
+	- Map을 이용
+	- @Param을 이용해서 이름을 사용(가장 간단한 방식)
+```java
+public List<ReplyVO> getListWithPaging(@Param("cri") Criteria cri, @Param("bno") Long bno);
+```
