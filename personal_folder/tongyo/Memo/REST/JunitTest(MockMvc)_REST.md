@@ -91,3 +91,15 @@ public class SampleControllerTests {
 	}
 }
 ```
+-------
+# 기타 도구
+- Junit 이외에도 Tomcat을 구동한다면 다른 여러가지 도구들이 존재함
+> curl
+- Mac, Linux 용
+- https://curl.haxx.se
+> chrome 브라우저 앱스토어
+- 크롬 앱스토어(chrome://apps/)에서 REST client 검색
+- 가장 사용자가 많은 확장프로그램으로 테스트 했음<br>
+<img width="1000px" src="./img/1.png"><br><br>
+- 간단하게 테스트가 가능함
+<img width="1000px" src="./img/2.png">

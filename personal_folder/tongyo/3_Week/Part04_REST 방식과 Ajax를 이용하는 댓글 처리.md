@@ -227,3 +227,25 @@
         }
     }
     ```
+-------
+- REST 다양한 전송방식
+    - REST 방식의 데이터 교환에서 가장 특이한 점은 기존의 GET/POST 외에 다양한 방식으로 데이터를 전달한다는 점
+    > HTTP의 전송방식
+
+    |작업|전송방식|URI 예제|
+    |---|---|---|
+    |등록(Create)|POST|/members/new|
+    |조회(Read)|GET|/members/{id}|
+    |수정(Update)|PUT|/members/{id}+body(json데이터 등)|
+    |삭제(Delete)|DELETE|/members/{id}|
+--------------
+- 기타 도구
+    - Junit 이외에도 Tomcat을 구동한다면 다른 여러가지 도구들이 존재함
+- curl
+    - https://curl.haxx.se
+- chrome 브라우저 앱스토어
+    - 크롬 앱스토어(chrome://apps/)에서 REST client 검색
+    - 가장 사용자가 많은 확장프로그램으로 테스트 했음<br>
+    <img width="1000px" src="./img/1.png"><br><br>
+    - 간단하게 테스트가 가능함
+    <img width="1000px" src="./img/2.png">
