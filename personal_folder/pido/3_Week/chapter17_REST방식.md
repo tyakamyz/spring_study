@@ -137,7 +137,7 @@ REST 방식
 
     > ```
     > ★ JAVA8의 IntStream
-    >
+    > ------------------------------------------------------
     > public void for_loop() {
     >    for (int i = 1 ; i <= 10 ; i++) {
     >        System.out.println(i);
