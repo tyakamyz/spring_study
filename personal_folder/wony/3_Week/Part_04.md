@@ -269,3 +269,27 @@ public class SampleControllerTests {
 ```java
 public List<ReplyVO> getListWithPaging(@Param("cri") Criteria cri, @Param("bno") Long bno);
 ```
+
+### 17.2 등록 작업과 테스트
+ - REST 방식으로 처리할 때 주의해야 하는 점은 브라우저나 외부에서 서버를 호출 할 때 데이터의 포맷과 서버에서 보내주는 데이터의 타입을 명확히 설계해야 하는것이다.
+ - 예로 댓글 등록의 경우 브라우저에서는 JSON 타입으로 된 댓글 데이터를 전송하고, 서버에서는 댓글의 처리 결과가 정상적으로 되었는지 문자열로 결과를 알려 주도록 한다.
+```java
+@PostMapping(value = "/new", consumes = "application/json", produces = {MediaType.TEXT_PLAIN_VALUE})
+	public ResponseEntity<String> create(@RequestBody ReplyVO vo){
+		
+		log.info("ReplyVO : " + vo);
+		
+		int insertCount = service.register(vo);
+		
+		log.info("Reply Insert Count : " + insertCount);
+		
+		return insertCount == 1 ? new ResponseEntity<>("success", HttpStatus.OK) : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		
+	}
+``` 
+> - 요청타입 정의 = consumes  
+	- 위의 예제에서 consumes = MediaType.APPLICATION_JSON_VALUE 형식으로도 사용가능
+> - 응답타입 정의 = producess
+	- 위의 예제에서 produces = ("text/plain")형식으로도 사용가능
+
+> REST PUT 과 PATCH 차이점
