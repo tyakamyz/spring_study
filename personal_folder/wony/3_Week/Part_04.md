@@ -64,12 +64,10 @@ public class SampleVO {
   
  - @AllArgsConstructor 모든속성을 사용하는 생성자 어노테이션
  - @NoArgsConstructor 비어있는 생성자를 만드는 어노테이션  
- - xml 파일  
- 
-	<img src="../img/sample_getSample.png" title="xml파일" alt="star" width="50%"></img>
-</br>
-- json 파일
-	<img src="../img/sample_getSample_json.png" title="json파일" alt="star"></img>
+ - xml 파일</br>
+	<img src="../img/sample_getSample.png" title="xml파일" alt="star" width="50%"></img></br>
+ - json 파일</br>
+	<img src="../img/sample_getSample_json.png" title="json파일" alt="star" width="50%"></img>
 </br>
 
  
@@ -84,10 +82,10 @@ public class SampleVO {
 	}
    ```
 - 내부적으로 1~10미만까지 루프를 처리하면서 SampleVO객체를 만들어서 List<SampleVO>로 만들어 낸다.
-  - json
-<img src="../img/sample_getList.png" height="500px"></br>
-  - xml  
-<img src="../img/sample_getList_json.png"></br></br>
+  - json </br>
+	<img src="../img/sample_getList.png" height="500px"></br>
+  - xml  </br>
+	<img src="../img/sample_getList_json.png"></br>
 
 - Map 반환
 ```java
