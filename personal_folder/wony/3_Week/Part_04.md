@@ -66,13 +66,12 @@ public class SampleVO {
  - @NoArgsConstructor 비어있는 생성자를 만드는 어노테이션  
  - xml 파일  
  
-<img src="../img/sample_getSample.png" title="xml파일" alt="star"></img>
-<br/>
-<br/>
+	<img src="../img/sample_getSample.png" title="xml파일" alt="star" width="50%"></img>
+</br>
 - json 파일
-<img src="../img/sample_getSample_json.png" title="json파일" alt="star"></img>
-<br/>
-<br/>
+	<img src="../img/sample_getSample_json.png" title="json파일" alt="star"></img>
+</br>
+
  
 #### 16.1.2 컬렉션 타입의 객체 반환
 
@@ -100,10 +99,10 @@ public class SampleVO {
 		return map;
 	}
 ```
-  - json  
-<img src="../img/sample_getMap.png"></br>
-  - xml  
-<img src="../img/sample_getMap_json.png"></br>
+  - xml</br>
+	<img src="../img/sample_getMap_json.png" width="50%"></br>
+  - json</br>
+	<img src="../img/sample_getMap.png" width="50%">
 
 ### 16.2 ResponseEntity 타입
  - REST 방식으로 호출하는 경우는 화면 자ㅣ체가 아니라 데이터 자체를 전송하는 방식으로 처리되기 때문에 데이터를 요청한 쪽에서는 정상적인 데이터인지 비정상적인 데이터인지를 구분할 수 있는 확실한 방법을 제공해야 한다.
@@ -128,10 +127,10 @@ public class SampleVO {
 	}
  ```
  - 'height' 와 'weight'를 파라미터로 전달받는다.
- - height < 150  일경우
- <img src="../img/sample_check_BadGate.png"></br>
- - height > 150  일경우
- <img src="../img/sample_check_OK.png"></br>
+ - height < 150  일경우</br>
+ 	<img src="../img/sample_check_BadGate.png" width="50%"></br>
+ - height > 150  일경우 </br>
+ 	<img src="../img/sample_check_OK.png" width="50%"></br>
 
  ### 16.3 @RestController에서 파라미터
 
@@ -157,10 +156,10 @@ public class SampleVO {
  - @PathVariable 을 적용하고 싶은 경우에는 '{}'를 이용해서 변수명을 지정한고, @PathVarialbe을 이용해서 지정된 이름의 변숫값을 얻을 수 있다.
  - 값을 얻을 떄에는 int, double형과 같은 기본 자료형은 사용할 수 없다.(Wapper형만 가능)
  - 예제
-    - xml
-<img src="../img/sample_product.png">
-    - json
-<img src="../img/sample_product_json.png">
+    - xml</br>
+	<img src="../img/sample_product.png" width="50%">
+    - json</br>
+	<img src="../img/sample_product_json.png" width="50%">
 > - URL뒤에 .json을 붙이니 역시 JSON으로도 호출이 된다.
 
 #### 16.3.2 @RequestBody
