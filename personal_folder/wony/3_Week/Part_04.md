@@ -257,7 +257,7 @@ public class SampleControllerTests {
 
 ## **Chapter 17** Ajax 댓글 처리
 
-###17.1 @Param어노테이션과 댓글 목록
+### 17.1 @Param어노테이션과 댓글 목록
 
 - MyBatis에서 두 개 이상의 데이터를 파라미터로 전달하는 방법
 	- 별도의 객체로 구성
@@ -285,8 +285,12 @@ public List<ReplyVO> getListWithPaging(@Param("cri") Criteria cri, @Param("bno")
 	}
 ``` 
 > - 요청타입 정의 = consumes  
-	- 위의 예제에서 consumes = MediaType.APPLICATION_JSON_VALUE 형식으로도 사용가능
+>	- 위의 예제에서 consumes = MediaType.APPLICATION_JSON_VALUE 형식으로도 사용가능
 > - 응답타입 정의 = producess
-	- 위의 예제에서 produces = ("text/plain")형식으로도 사용가능
+>	- 위의 예제에서 produces = ("text/plain")형식으로도 사용가능
 
-> REST PUT 과 PATCH 차이점
+> REST PUT 과 PATCH 차이점(추가 확인필요)
+> - Put
+>	- 자원의 전체를 교체하는 경우
+> - Patch
+>	- 요청된 자원만을 교체하는 경우
