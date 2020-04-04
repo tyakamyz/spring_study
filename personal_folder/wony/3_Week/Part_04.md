@@ -294,3 +294,66 @@ public List<ReplyVO> getListWithPaging(@Param("cri") Criteria cri, @Param("bno")
 >	- 자원의 전체를 교체하는 경우
 > - Patch
 >	- 요청된 자원만을 교체하는 경우
+
+### 17.4 JavaScript
+
+#### 17.4.1 JavaScript 모듈화
+
+ - 유지보수가 하가ㅣ힘든 코드를 만드는경우를 방지하기위해 JavaScript를 하나의 모듈 처럼 구성하는 방식을 이용
+ - JavaScript에서 가장 많이 사용하는 패턴 중 하나는 관련 있는 함수들을 하나의 모듈처럼 묶음으로 구성하는 것을 의미하는 모듈 패턴이다. JavaScript의 클로저를 이용하는 방식이 대표적인 방법
+
+ ##### 17.4.1.1 모듈 구성하기
+ ```javascript
+ var replyService = (function(){
+	
+	function add(reply, callback){
+		console.log("reply........");
+	}
+	return {add:add};
+})();
+ ```
+  - 개발자 도구에서는 replyService 객체의 내부에는 add라는 메서드가 존재하는 형태로 보이게 된다.
+  - 외부에서는 replyService.add(객체, 콜백)를 전달하는 형태로 호출할 수 있는데, Ajax호출은 감춰져 있기 때문에 코드를 좀 더 깔끔하게 작성할 수 있다.
+  ```javascript
+  $.ajax({
+	type : 'post',
+	url : '/replies/new',
+	data : JSON.stringfy(reply),
+	contentType : "application/json; charset=utf-8",
+	success : function(result, status, xhr){
+		if(callback){
+			callback(result);
+		}
+	},
+	error : function(xhr, status, er){
+		if(error){
+			error(er);
+		}
+	}
+})
+  ```
+
+#### 17.5 시간에 대한 처리방식
+
+ - 날짜 포맷의 경우 문화권마다 표기 순서 등이 다르기 때문에 화면에서 처리하는 방식을 권장한다.
+ - 최근 웹페이지들은 해당일에 해당하는 데이터는 '시/분/초'를 보여주고, 전날에 등록된 데이터들은 '년/월/일' 등을 보여주는 경우가 많다.
+
+ > #### 17.6 특정 댓글의 위임 처리
+
+  - DOM에서 이벤트 리스너를 등록하는 것은 반드시 해당 DOM요소가 존재헤야만 가능하다.
+  - 예제와 같이 동적으로 Ajax를 통해 태그들이 만들어지면 이후에 이벤트를 등록해야 하기 때문에 일반적인 방식이 아니라 '이벤트 위임(delegation)'의 형태로 작성해야 한다.
+	- 이벤트 위임은 이벤트를 동적으로 생성되는 요소가 아닌 이미 존재하는 요소에 이벤트를 걸어주고, 후에 이벤트의 대상을 변경해 주는 방식이다.
+	- jQuery는 on()을 이용해서 쉽게 처리할 수 있다.
+ ```javascript
+$(".chat").on("click", "li", function(e){
+
+	var rno = $(this).data("rno");
+	
+	console.log(rno);
+	
+});
+ ```
+  - jQuery 에서 이벤트를 위임하는 방식
+	- 이미 존재하는 DOM요소(위에서는 '.chat')에 이벤트 처리
+	- 후에 동적으로 생기는 요소(위에서는 'li')들에 대해서 파라미터 형식으로 지정한다.
+
