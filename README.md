@@ -202,6 +202,14 @@ Development Environment
 > 
 > 17.7 댓글 페이지의 화면 처리
 
+</details>
+
+
+-------------------------------
+
+<details markdown="1">
+<summary> 4 Week (2020. 04. 05 ~ 2020. 04. 12) + 중간 정리</summary>
+
 - ### Part 5 AOP와 트랜잭션
 
 #### 18장 AOP라는 패러다임
@@ -230,7 +238,8 @@ Development Environment
 ------------
 
 <details markdown="1">
-<summary> 4 Week (2020. 04. 05 ~ 2020. 04. 12)</summary>
+
+<summary> 5 Week (2020. 04. 12 ~ 2020. 04. 19)</summary>
 
 - ### Part 6 파일 업로드 처리
 
@@ -302,7 +311,7 @@ Development Environment
 -----------------
 
 <details markdown="1">
-<summary> 5 Week (2020. 04. 12 ~ 2020. 04. 19)</summary>
+<summary> 6 Week (2020. 04. 19 ~ 2020. 04. 26)</summary>
 
 - ### Part 7 Spring Web Security를 이용한 로그인 처리
 
