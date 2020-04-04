@@ -149,9 +149,9 @@ public ResponseEntity<String> modify(@RequestBody ReplyVO vo, @PathVariable("rno
 - 즉시실행함수는 함수의 시행 결과가 바깥쪽에 선언된 변수에 할당된다.
 - $(document).ready.. 는 여러번 나와도 상관없음! 
 
-< reply.js 완성본>
+< reply.js 완성본> : 
 [reply.js](https://github.com/tyakamyz/spring_study/files/4431140/reply.js.txt)   
-< js호출하는 jsp 완성본 >
+< js호출하는 jsp 완성본 > : 
 [get.jsp](https://github.com/tyakamyz/spring_study/files/4431177/get.jsp.txt)
 
 모듈화 패턴의 js 사용 방법 
@@ -250,27 +250,27 @@ replyService.remove(rno, function(result){
 ```javascript
 function displayTime(timeValue){
 		
-		var today = new Date();
-		var gap = today.getTime() - timeValue;
-		
-		var dateObj = new Date(timeValue);
-		var str = "";
-		
-		if(gap < (1000 * 60 * 60 * 24)){
-			var hh = dateObj.getHours();
-			var mi = dateObj.getMinutes();
-			var ss = dateObj.getSeconds();
-			
-			return [(hh > 9 ? '' : '0') + hh, ':', (mi > 9 ? '' : '0') + mi, ':', (ss > 9 ? '' : '0') + ss].join('');
-			
-		}else{
-			var yy = dateObj.getFullYear();
-			var mm = dateObj.getMonth() + 1; // getMonth() is zero-based
-			var dd = dateObj.getDate();
-			
-			return [yy, '/', (mm > 9 ? '' : '0') + mm, '/', (dd > 9 ? '' : '0') + dd].join('');
-		}
+	var today = new Date();
+	var gap = today.getTime() - timeValue;
+
+	var dateObj = new Date(timeValue);
+	var str = "";
+
+	if(gap < (1000 * 60 * 60 * 24)){
+		var hh = dateObj.getHours();
+		var mi = dateObj.getMinutes();
+		var ss = dateObj.getSeconds();
+
+		return [(hh > 9 ? '' : '0') + hh, ':', (mi > 9 ? '' : '0') + mi, ':', (ss > 9 ? '' : '0') + ss].join('');
+
+	}else{
+		var yy = dateObj.getFullYear();
+		var mm = dateObj.getMonth() + 1; // getMonth() is zero-based
+		var dd = dateObj.getDate();
+
+		return [yy, '/', (mm > 9 ? '' : '0') + mm, '/', (dd > 9 ? '' : '0') + dd].join('');
 	}
+}
 ```
 <hr/>
 
