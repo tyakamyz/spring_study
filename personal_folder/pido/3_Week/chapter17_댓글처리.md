@@ -150,4 +150,141 @@ public ResponseEntity<String> modify(@RequestBody ReplyVO vo, @PathVariable("rno
 - $(document).ready.. 는 여러번 나와도 상관없음! 
 
 < reply.js 완성본>
-[reply.js](https://github.com/tyakamyz/spring_study/files/4431140/reply.js.txt)
+[reply.js](https://github.com/tyakamyz/spring_study/files/4431140/reply.js.txt)   
+< js호출하는 jsp 완성본 >
+[get.jsp](https://github.com/tyakamyz/spring_study/files/4431177/get.jsp.txt)
+
+모듈화 패턴의 js 사용 방법 
+```javascript
+// reply.js
+var replyService=(function(){
+	
+	function add(reply,callback,error){
+		console.log("reply........");
+		$.ajax({
+			type:'post',
+			url: '/replies/new',
+			data: JSON.stringify(reply),
+			contentType: "application/json; charset=utf-8",
+			success: function(result,status,xhr){
+				if(callback){
+					callback(result);
+				}
+			},
+			error : function(xhr,status,er){
+				if(error){
+					error(er);
+				}
+			}
+		})
+	}
+	
+	function getList(param, callback, error){
+		var bno = param.bno;
+		var page = param.page || 1;
+		
+		$.getJSON("/replies/pages/" + bno + "/" + page + ".json",
+		function(data){
+			if(callback){
+				//callback(data); 	// 댓글 목록만 가져오는 경우
+				callback(data.replyCnt, data.list);  // 댓글 숫자와 목록을 가져오는 경우
+			}
+		}).fail(function(xhr, status, err){
+			if(error){
+				error();
+			}
+		})
+	}		
+
+	function get(rno, callback, error){
+		...
+	}
+
+	function displayTime(timeValue){
+		...
+	}
+
+	return {
+		add : add,
+		getList : getList,
+		get : get,
+		displayTime : displayTime
+	};
+
+})();		
+```		
+> - 즉시 실행하는 함수 내부에서 필요한 메서드(add, getList, get, displayTime...)를 구성해서 객체를 구성하는 방식이다.  
+> - add()의 경우 Ajax를 이용하여 POST 방식 호출
+> - getList()의 경우 param 객체를 통해 필요한 파라미터를 전달받아 JSON목록을 호출한다. (URL호출시 '.json' 형태)
+
+```jsp
+// get.jsp
+<script type="text/javascript" src="/resources/js/reply.js" ></script>
+<script type="text/javascript">
+
+replyService.add(
+	{reply:"JS TEST", replyer:"tester", bno:bnoValue}
+	,
+	function(result){
+		alert("RESULT: " + result);
+	}
+);
+
+replyService.remove(rno, function(result){
+	alert(result);
+	modal.modal("hide");
+	showList(pageNum);
+});
+
+```
+> - 외부에서는 replyService.add(객체, 콜백)를 전달하는 형태로 호출 한다.   
+> - 이때 Ajax 호출은 js 객체 내에 감춰져 있어 필요한 파라미터들만 전달하는 형태로 간결해 진다.
+> - add()에 던져야하는 파라미터는 Jacascript의 객체타입으로 전송
+> - ajax 전송 결과를 처리하는 함수를 파라미터로 같이 전달 
+> - Key(rno)를 이용한 경우(get, remove, update 등) 파라미터를 전딜한다. 
+
+
+<hr/>
+
+*24시간 지난 경우 날짜만 표시, 24시간 이내의 경우 시간으로 표시하는 함수*
+```javascript
+function displayTime(timeValue){
+		
+		var today = new Date();
+		var gap = today.getTime() - timeValue;
+		
+		var dateObj = new Date(timeValue);
+		var str = "";
+		
+		if(gap < (1000 * 60 * 60 * 24)){
+			var hh = dateObj.getHours();
+			var mi = dateObj.getMinutes();
+			var ss = dateObj.getSeconds();
+			
+			return [(hh > 9 ? '' : '0') + hh, ':', (mi > 9 ? '' : '0') + mi, ':', (ss > 9 ? '' : '0') + ss].join('');
+			
+		}else{
+			var yy = dateObj.getFullYear();
+			var mm = dateObj.getMonth() + 1; // getMonth() is zero-based
+			var dd = dateObj.getDate();
+			
+			return [yy, '/', (mm > 9 ? '' : '0') + mm, '/', (dd > 9 ? '' : '0') + dd].join('');
+		}
+	}
+```
+<hr/>
+
+댓글 페이징 처리
+----------------
+1. DB (인덱스 생성 및 쿼리)
+```sql
+create index idx_reply on tbl_reply (bno desc, rno asc);
+```
+```sql
+select /*+INDEX(tbl_reply idx_reply) */
+rownum rn, bno, rno, reply, replyer, replyDate, updateDate
+from tbl_reply 
+where bno = 1--(게시물번호)
+and rno > 0;
+```
+
