@@ -12,79 +12,79 @@
 <hr />
 
 1. 접근자 / 설성자 자동생성 (**@Getter @Setter**)
-```java
-// 자동으로 getPageNum과 setPageNum을 만들어 준다. 
-@Getter @Setter
-public class Criteria {
-    private int pageNum;
-}
-```
+    ```java
+    // 자동으로 getPageNum과 setPageNum을 만들어 준다. 
+    @Getter @Setter
+    public class Criteria {
+        private int pageNum;
+    }
+    ```
 
 2. 생성자 자동생성
-```java
-@NoArgsConstructor
-@RequiredArgsConstructor
-@AllArgsConstructor
-public class ReplyPageDTO {
-	private int replyCnt;
-	private List<ReplyVO> list;
-    @NonNull
-    private int replyNum;
-}
-```
-```java
-// @NoArgsConstructor
-ReplyPageDTO page = new ReplyPageDTO();
-// @RequiredArgsConstructor
-ReplyPageDTO page2 = new ReplyPageDTO(replyNum);
-// @AllArgsConstructor
-ReplyPageDTO page3 = new ReplyPageDTO(replyCnt, list, replyNum);
-```
-@NoArgsConstructor : 파라미터가 없는 기본 생성자를 생성   
-@RequiredArgsConstructor : final이나 @NonNull인 필드 값만 파라미터로 받는 생성자를 생성(특정 변수에 대해서만 생성자를 작성하고 싶을 경우)   
-@AllArgsConstructor : 모든 필드 값을 파라미터로 받는 생성자를 생성   
+    ```java
+    @NoArgsConstructor
+    @RequiredArgsConstructor
+    @AllArgsConstructor
+    public class ReplyPageDTO {
+        private int replyCnt;
+        private List<ReplyVO> list;
+        @NonNull
+        private int replyNum;
+    }
+    ```
+    ```java
+    // @NoArgsConstructor
+    ReplyPageDTO page = new ReplyPageDTO();
+    // @RequiredArgsConstructor
+    ReplyPageDTO page2 = new ReplyPageDTO(replyNum);
+    // @AllArgsConstructor
+    ReplyPageDTO page3 = new ReplyPageDTO(replyCnt, list, replyNum);
+    ```
+    * @NoArgsConstructor : 파라미터가 없는 기본 생성자를 생성   
+    * @RequiredArgsConstructor : final이나 @NonNull인 필드 값만 파라미터로 받는 생성자를 생성(특정 변수에 대해서만 생성자를 작성하고 싶을 경우)   
+    * @AllArgsConstructor : 모든 필드 값을 파라미터로 받는 생성자를 생성   
 
 
-3. ToString 메소드 자동생성
-```java
-// 자동으로 .toString()을 생성한다.
-@ToString
-public class Criteria {
-    // paging 
-	private int pageNum;
-	private int amount;
-}    
-```    
+3. ToString 메소드 자동생성(**@ToString**)
+    ```java
+    // 자동으로 .toString()을 생성한다.
+    @ToString
+    public class Criteria {
+        // paging 
+        private int pageNum;
+        private int amount;
+    }    
+    ```    
 
 4. @Data
-```java
-@Data
-public class ReplyVO {
-	private Long bno;
-	private Long rno;
-}
+    ```java
+    @Data
+    public class ReplyVO {
+        private Long bno;
+        private Long rno;
+    }
 
-```
-@Getter, @Setter, @RequiredArgsConstructor, @ToString, @EqualsAndHashCode을 한꺼번에 설정해주는어노테이션
+    ```
+    * @Getter, @Setter, @RequiredArgsConstructor, @ToString, @EqualsAndHashCode을 한꺼번에 설정해주는어노테이션
 
 5. @Log4j   
-```java
-@Log4j
-@AllArgsConstructor
-public class ReplyController {
-    ...
-}    
-```
-자동으로 log 필드를 만들고, 해당 클래스의 이름으로 로거 객체를 생성하여 할당
+    ```java
+    @Log4j
+    @AllArgsConstructor
+    public class ReplyController {
+        ...
+    }    
+    ```
+    * 자동으로 log 필드를 만들고, 해당 클래스의 이름으로 로거 객체를 생성하여 할당
 
-6. Null 체크   
-```java
-public class ReplyPageDTO {
-	private int replyCnt;
-	private List<ReplyVO> list;
-    @NonNull
-    private int replyNum;
-}
-```
-@NonNull 어노테이션을 변수에 붙이면 자동으로 null 체크를 하며,   
-해당 변수가 null로 넘어온 경우, NullPointerException 예외를 일으켜 준다.
+6. Null 체크(**@NonNull**)   
+    ```java
+    public class ReplyPageDTO {
+        private int replyCnt;
+        private List<ReplyVO> list;
+        @NonNull
+        private int replyNum;
+    }
+    ```
+    * @NonNull 어노테이션을 변수에 붙이면 자동으로 null 체크를 하며,   
+    해당 변수가 null로 넘어온 경우, NullPointerException 예외를 일으켜 준다.
