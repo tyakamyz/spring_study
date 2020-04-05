@@ -249,3 +249,1074 @@
     <img width="1000px" src="./img/1.png"><br><br>
     - 간단하게 테스트가 가능함
     <img width="1000px" src="./img/2.png">
+------------
+> ## ch17. Ajax 댓글 처리
+- ReplyVO.java
+```java
+package org.zerock.domain;
+
+import java.util.Date;
+
+import lombok.Data;
+
+@Data
+public class ReplyVO {
+	private Long rno;
+	private Long bno;
+	
+	private String reply;
+	private String replyer;
+	private Date replyDate;
+	private Date updateDate;
+}
+```
+- ReplyMapper.java
+```java
+package org.zerock.mapper;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Param;
+import org.zerock.domain.Criteria;
+import org.zerock.domain.ReplyVO;
+
+public interface ReplyMapper {
+	public int insert(ReplyVO vo);
+	
+	public ReplyVO read(Long bno);
+	
+	public int delete(Long rno);
+	
+	public int update(ReplyVO reply);
+	
+	public List<ReplyVO> getListWithPaging(@Param("cri") Criteria cri, @Param("bno") Long bno);
+	
+}
+```
+- ReplyMapper.xml
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.zerock.mapper.ReplyMapper">
+	<insert id="insert">
+		insert into TBL_REPLY(rno, bno, reply, replyer)
+		values(seq_reply.nextval, #{bno}, #{reply}, #{replyer})
+	</insert>
+	
+	<select id="read" resultType="org.zerock.domain.ReplyVO">
+		select * from tbl_reply where rno = #{rno}
+	</select>
+	
+	<delete id="delete">
+		delete from tbl_reply where rno = #{rno}
+	</delete>
+	
+	<update id="update">
+		update tbl_reply set reply = #{reply}, updatedate = sysdate where rno = #{rno}
+	</update>
+	
+	<select id="getListWithPaging" resultType="org.zerock.domain.ReplyVO">
+		select rno, bno, reply, replyer, replyDate, updatedate
+		from tbl_reply
+		where bno = #{bno}
+		order by rno asc
+	</select>
+</mapper>
+```
+- ReplyMapperTests.java
+```java
+package org.zerock.controller;
+
+
+import java.util.List;
+import java.util.stream.IntStream;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+import org.zerock.domain.Criteria;
+import org.zerock.domain.ReplyVO;
+import org.zerock.mapper.ReplyMapper;
+
+import lombok.Setter;
+import lombok.extern.log4j.Log4j;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+//Test for Controller
+@WebAppConfiguration
+@ContextConfiguration({"file:src/main/webapp/WEB-INF/spring/appServlet/servlet-context.xml",
+	"file:src/main/webapp/WEB-INF/spring/root-context.xml"}) // XML Version
+//@ContextConfiguration(classes = {RootConfig.class, ServletConfig.class}) // Java Version
+@Log4j
+public class ReplyMapperTests {
+	
+	private Long[] bnoArr = {3145728L, 3145727L, 3145726L, 3145725L, 3145724L};
+	
+	@Setter(onMethod_ = @Autowired)
+	private ReplyMapper mapper;
+	
+	@Test
+	public void testMapper() {
+		log.info(mapper);
+	}
+	
+	@Test
+	public void testCreate() {
+		IntStream.rangeClosed(1,10).forEach(i -> {
+			ReplyVO vo = new ReplyVO();
+			
+			vo.setBno(bnoArr[i % 5]);
+			vo.setReply("댓글 테스트 " + i);
+			vo.setReplyer("replyer " + i);
+			
+			mapper.insert(vo);
+		});
+	}
+	
+	@Test
+	public void testRead() {
+		Long targetRno = 5L;
+		
+		ReplyVO vo = mapper.read(targetRno);
+		
+		log.info(vo);
+	}
+	
+	@Test
+	public void testDelete() {
+		Long targetRno = 2L;
+		
+		mapper.delete(targetRno);
+	}
+	
+	@Test
+	public void testUpdate() {
+		Long targetRno = 10L;
+		
+		ReplyVO vo = mapper.read(targetRno);
+		
+		vo.setReply("Update Reply ");
+		
+		int count = mapper.update(vo);
+		
+		log.info("UPDATE COUNT : " + count);
+	}
+	
+	@Test
+	public void testList() {
+		Criteria cri = new Criteria();
+		
+		List<ReplyVO> replies = mapper.getListWithPaging(cri, bnoArr[0]);
+		
+		replies.forEach(reply -> log.info(reply));
+	}
+}
+```
+---------
+- RESTController 설계
+    - REST 방식으로 동작하는 URL을 설계할 때는 PK를 기준으로 작성 권장
+    - PK만으로 조회, 수정, 삭제가 가능하기 때문
+    - 목록의 경우 PK를 사용할 수 없기 때문에 게시물의 번호(bno)와 페이지 번호(page) 정보들을 URL에서 표현하는 방식을 사용
+    
+    |작업|URL|HTTP 전송방식|
+    |---|---|---|
+    |등록|/replies/new|POST|
+    |조회|/replies/:rno|GET|
+    |삭제|/replies/:rno|DELETE|
+    |수정|/replies/rno|PUT or PATCH|
+    |페이지|/replies/pages/:bno/:page|GET|
+- REST 방식으로 처리할 때 주의점
+    - 브라우저나 외부에서 서버를 호출할 때 데이터의 포맷과 서버에서 보내주는 데이터의 타입을 명확히 설계해야 함
+    - ex) 댓글 등록의 경우 브라우저에서는 JSON 타입으로 된 댓글 데이터를 전송하고, 서버에서는 댓글의 처리 결과가 정상적으로 되었는지 문자열로 결과를 알려줘야 함
+- ReplyController.java
+    - @RequestBody : JSON 데이터를 VO에 담을 수 있게 변경해 줌
+```java
+package org.zerock.controller;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+import org.zerock.domain.Criteria;
+import org.zerock.domain.ReplyVO;
+import org.zerock.service.ReplyService;
+
+import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j;
+
+@RequestMapping("/replies/")
+@RestController
+@Log4j
+@AllArgsConstructor
+public class ReplyController {
+	
+	private ReplyService service;
+	
+	//댓글 등록
+	@PostMapping(value="/new", consumes="application/json", produces= {MediaType.TEXT_PLAIN_VALUE})
+	public ResponseEntity<String> create(@RequestBody ReplyVO vo){
+		log.info("ReplyVO: " + vo);
+		
+		int insertCount = service.register(vo);
+		
+		log.info("Reply INSERT COUNT: " + insertCount);
+		
+		return insertCount == 1
+				? new ResponseEntity<>("success", HttpStatus.OK)
+				: new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+				//삼항 연산자 처리
+	}
+	
+	// 댓글 목록
+	@GetMapping(value="/pages/{bno}/{page}", produces= {MediaType.APPLICATION_ATOM_XML_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE})
+	public ResponseEntity<List<ReplyVO>> getList(@PathVariable("page") int page, @PathVariable("bno") Long bno){
+		log.info("getList........");
+		Criteria cri = new Criteria(page, 10);
+		
+		log.info(cri);
+		
+		return new ResponseEntity<>(service.getList(cri, bno), HttpStatus.OK);
+	}
+	
+	// 댓글 조회
+	@GetMapping(value="/{rno}", produces= {MediaType.APPLICATION_ATOM_XML_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE})
+	public ResponseEntity<ReplyVO> get(@PathVariable("rno") Long rno){
+		log.info("get : " + rno);
+		
+		return new ResponseEntity<>(service.get(rno), HttpStatus.OK);
+	}
+	
+	// 댓글 삭제
+	@DeleteMapping(value="/{rno}", produces= {MediaType.TEXT_PLAIN_VALUE})
+	public ResponseEntity<String> remove(@PathVariable("rno") Long rno){
+		log.info("remove : " + rno);
+		
+		return service.remove(rno) == 1
+				? new ResponseEntity<>("success", HttpStatus.OK)
+				: new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+	
+	// 댓글 수정
+	@RequestMapping(method= {RequestMethod.PUT, RequestMethod.PATCH}, value="/{rno}", consumes="application/json", produces= {MediaType.TEXT_PLAIN_VALUE})
+	public ResponseEntity<String> modify(@RequestBody ReplyVO vo, @PathVariable("rno") Long rno){
+		vo.setRno(rno);
+		
+		log.info("rno : " + rno);
+		log.info("modify : " + vo);
+		
+		return service.modify(vo) == 1
+				? new ResponseEntity<>("success", HttpStatus.OK)
+				: new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+}
+```
+-----------
+- JavaScript 모듈화
+    - reply.js
+    ```js
+    console.log("Reply Module.....");
+
+    var replyService = (function(){
+        // 댓글 등록
+        function add(reply, callback, error){
+            console.log("reply.......");
+            
+            $.ajax({
+                type : 'post',
+                url : '/replies/new',
+                data : JSON.stringify(reply),
+                contentType : "application/json; charset=utf-8",
+                success : function(result, status, xhr){
+                    if(callback){
+                        callback(result);
+                    }
+                },
+                error : function(xhr, status, er){
+                    if(error){
+                        error(er);
+                    }
+                }
+            })
+        }
+        
+        // 댓글 목록
+        function getList(param, callback, error){
+            var bno = param.bno;
+            
+            var page = param.page || 1;
+            
+            $.getJSON("/replies/pages/" + bno + "/" + page + ".json", 
+            function(data){
+                if(callback){
+                    callback(data);
+                }
+            }).fail(function(xhr, status, err){
+                if(error){
+                    error();
+                }
+            });
+        }
+        
+        // 댓글 삭제
+        function remove(rno, callback, error){
+            $.ajax({
+                type : 'delete',
+                url : '/replies/' + rno,
+                success : function(deleteResult, status, xhr){
+                    if(callback){
+                        callback(deleteResult);
+                    }
+                },
+                error : function(xhr, status, er){
+                    if(error){
+                        error(er);
+                    }
+                }
+            })
+        }
+        
+        // 댓글 수정
+        function update(reply, callback, error){
+            console.log("RNO : " + reply.rno);
+            
+            $.ajax({
+                type : 'put',
+                url : '/replies/' + reply.rno,
+                data : JSON.stringify(reply),
+                contentType : "application/json; charset=utf-8",
+                success : function(result, status, xhr){
+                    if(callback){
+                        callback(result);
+                    }
+                },
+                error : function(xhr, status, er){
+                    if(error){
+                        error(er);
+                    }
+                }
+            })
+        }
+        
+        // 댓글 조회
+        function get(rno, callback, error) {
+            $.get("/replies/" + rno + ".json", function(result) {
+                if (callback) {
+                    callback(result);
+                }
+            }).fail(function(xhr, status, err) {
+                if (error) {
+                    error();
+                }
+            });
+        }
+        
+        return {
+            add : add,
+            getList : getList,
+            remove : remove,
+            update : update,
+            get : get
+        };
+    })();
+    ```
+    - get.jsp
+    ```js
+    <script type="text/javascript" src="/resources/js/reply.js"></script>
+
+    <script>
+        console.log("===============");
+        console.log("JS TEST");
+        
+        var bnoValue = '<c:out value="${board.bno}"/>';
+        
+        //for replyService add test
+        replyService.add({
+            reply : "JS TEST",
+            replyer : "tester",
+            bno : bnoValue
+        }, function(result) {
+            alert("RESULT: " + result);
+        });
+
+        //for replyService getList test
+        replyService.getList({
+            bno : bnoValue,
+            page : 1
+        }, function(list) {
+            for (var i = 0, len = list.length || 0; i < len; i++) {
+                console.log(list[i]);
+            }
+        });
+
+        //for replyService remove test
+        replyService.remove(23, function(count) {
+            console.log(count);
+
+            if (count === "success") {
+                alert("REMOVED");
+            }
+        }, function(err) {
+            alert("ERROR......");
+        });
+
+        //for replyService update test
+        replyService.update({
+            rno : 22,
+            bno : bnoValue,
+            reply : "Modified Reply...."
+        }, function(result) {
+            alert("수정 완료...");
+        });
+        
+        //for replyService remove test
+        replyService.get(10, function(data){
+            console.log(data);
+        });
+        
+    </script>
+    ```
+--------------
+- 이벤트 처리와 HTML 처리
+    - reply.js
+        - 날짜 시간 보기 좋게 변경
+    ```js
+    // 날짜 시간 표기
+	function displayTime(timeValue){
+		var today = new Date();
+		
+		var gap = today.getTime() - timeValue;
+		
+		var dateObj = new Date(timeValue);
+		var str = "";
+		
+		if(gap < (1000 * 60 * 60 * 24)){
+			var hh = dateObj.getHours();
+			var mi = dateObj.getMinutes();
+			var ss = dateObj.getSeconds();
+			
+			return [(hh > 9 ? '' : '0') + hh, ':', (mi > 9 ? '' : '0') + mi, ':', (ss > 9 ? '' : '0') + ss].join('');
+		}else{
+			var yy = dateObj.getFullYear();
+			var mm = dateObj.getMonth() + 1; // getMonth() is zero-based
+			var dd = dateObj.getDate();
+			
+			return [yy, '/', (mm > 9 ? '' : '0') + mm, '/', (dd > 9 ? '' : '0') + dd].join('');
+		}
+	}
+	
+	return {
+		add : add,
+		getList : getList,
+		remove : remove,
+		update : update,
+		get : get,
+		displayTime : displayTime
+	};
+    ```
+    - get.jsp
+    ```jsp
+    <%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+    <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+    <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+        
+    <%@include file="../includes/header.jsp"%>
+    <!-- <script>
+        console.log("===============");
+        console.log("JS TEST");
+        
+        var bnoValue = '<c:out value="${board.bno}"/>';
+        
+        //for replyService add test
+        replyService.add({
+            reply : "JS TEST",
+            replyer : "tester",
+            bno : bnoValue
+        }, function(result) {
+            alert("RESULT: " + result);
+        });
+
+        //for replyService getList test
+        replyService.getList({
+            bno : bnoValue,
+            page : 1
+        }, function(list) {
+            for (var i = 0, len = list.length || 0; i < len; i++) {
+                console.log(list[i]);
+            }
+        });
+
+        //for replyService remove test
+        replyService.remove(23, function(count) {
+            console.log(count);
+
+            if (count === "success") {
+                alert("REMOVED");
+            }
+        }, function(err) {
+            alert("ERROR......");
+        });
+
+        //for replyService update test
+        replyService.update({
+            rno : 22,
+            bno : bnoValue,
+            reply : "Modified Reply...."
+        }, function(result) {
+            alert("수정 완료...");
+        });
+        
+        //for replyService remove test
+        replyService.get(10, function(data){
+            console.log(data);
+        });
+        
+    </script> -->
+    <!-- Modal -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="myModalLabel">REPLY MODAL</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Reply</label>
+                        <input class="form-control" name="reply" value="New Reply!!!">
+                    </div>
+                    <div class="form-group">
+                        <label>Replyer</label>
+                        <input class="form-control" name="replyer" value="replyer">
+                    </div>
+                    <div class="form-group">
+                        <label>Reply Date</label>
+                        <input class="form-control" name="replyDate" value="">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="modalModBtn" type="button" class="btn btn-warning">Modify</button>
+                    <button id="modalRemoveBtn" type="button" class="btn btn-danger">Remove</button>
+                    <button id="modalRegisterBtn" type="button" class="btn btn-primary">Register</button>
+                    <button id="modalCloseBtn" type="button" class="btn btn-default">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="/resources/js/reply.js"></script>
+    <script type="text/javascript">
+    $(document).ready(function (){
+
+        var bnoValue = '<c:out value="${board.bno}"/>';
+        var replyUL = $(".chat");
+        
+        showList(1);
+        
+        function showList(page){
+            replyService.getList({bno:bnoValue, page:page||1}, function(list){
+                var str="";
+                if(list == null || list.length == 0){
+                    replyUL.html("");
+                    
+                    return;
+                }
+                for(var i=0, len=list.length || 0; i<len; i++){
+                    str +="<li class='left clearfix' data-rno='" + list[i].rno+"'>";
+                    str +="<div><div class='header'><strong class='primary-font'>" + list[i].replyer+"</strong>";
+                    str +="<small class='pull-right text-muted'>" + replyService.displayTime(list[i].replyDate) +"</small></div>";
+                    str +="<p>" + list[i].reply+"</p></div></li>";
+                }
+                replyUL.html(str);
+            });//end function
+        }//end showList
+        
+        var modal = $(".modal");
+        var modalInputReply = modal.find("input[name='reply']");
+        var modalInputReplyer = modal.find("input[name='replyer']");
+        var modalInputReplyDate = modal.find("input[name='replyDate']");
+        
+        var modalModBtn = $("#modalModBtn");
+        var modalRemoveBtn = $("#modalRemoveBtn");
+        var modalRegisterBtn = $("#modalRegisterBtn");
+        var modalCloseBtn = $("#modalCloseBtn");
+        
+        $("#addReplyBtn").on("click", function(e){
+            modal.find("input").val("");
+            modalInputReplyDate.closest("div").hide();
+            modal.find("button[id != 'modalCloseBtn']").hide();
+            
+            modalRegisterBtn.show();
+            
+            $(".modal").modal("show");
+        });
+        
+        modalRegisterBtn.on("click", function(e){
+            var reply = {
+                reply: modalInputReply.val(),
+                replyer: modalInputReplyer.val(),
+                bno: bnoValue
+            };
+            
+            replyService.add(reply, function(result){
+                alert(result);
+                
+                modal.find("input").val("");
+                modal.modal("hide");
+                
+                showList(1);
+            });
+        });
+
+        $(".chat").on("click", "li", function(e){
+            var rno = $(this).data("rno");
+            
+            replyService.get(rno, function(reply){
+                modalInputReply.val(reply.reply);
+                modalInputReplyer.val(reply.replyer);
+                modalInputReplyDate.val(replyService.displayTime(reply.replyDate)).attr("readonly", "readonly");
+                modal.data("rno", reply.rno);
+                
+                modal.find("button[id != 'modalCloseBtn']").hide();
+                modalModBtn.show();
+                modalRemoveBtn.show();
+                
+                $(".modal").modal("show");
+                
+            });
+            
+            console.log(rno);
+        })
+        
+        modalModBtn.on("click", function(e){
+            var reply = {rno:modal.data("rno"), reply: modalInputReply.val()};
+            
+            replyService.update(reply, function(result){
+                alert(result);
+                modal.modal("hide");
+                showList(1);
+            });
+        });
+        
+        modalRemoveBtn.on("click", function(e){
+            var rno = modal.data("rno");
+            
+            replyService.remove(rno, function(result){
+                alert(result);
+                modal.modal("hide");
+                showList(1);
+            });
+        });
+        
+        modalCloseBtn.on("click", function(e){
+            modal.modal("hide");
+        });
+        
+        
+        var operForm = $("#operForm");
+        
+        $("button[data-oper='modify']").on("click", function(e){
+            operForm.attr("action","/board/modify").submit();
+        });
+        
+        $("button[data-oper='list']").on("click", function(e){
+            operForm.find("#bno").remove();
+            operForm.attr("action","/board/list")
+            operForm.submit();
+        });
+    });
+    </script>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <h1 class="panel-heading">Board Register</h1>
+        </div>
+    </div>
+    <!-- /.row -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">Board Register</div>
+                <!-- /.panel-heading -->
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label>Bno</label><input class="form-control" name="bno" value='<c:out value="${board.bno}"/>' readonly="readonly">
+                    </div>
+                    <div class="form-group">
+                        <label>Title</label><input class="form-control" name="title" value='<c:out value="${board.title}" />' readonly="readonly">
+                    </div>
+                    <div class="form-group">
+                        <label>Text area</label><textarea class="form-control" rows="3" name="content" readonly="readonly"><c:out value="${board.content}" /></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Writer</label><input class="form-control" name="writer" value='<c:out value="${board.writer}" />' readonly="readonly">
+                    </div>
+                    <button data-oper="modify" data-oper="modify" class="btn btn-default">Modify</button>
+                    <button data-oper="list" data-oper="list" class="btn btn-default">List</button>
+                    <form id='operForm' action="/board/modify" method="get">
+                        <input type="hidden" id="bno" name="bno" value='<c:out value="${board.bno}"/>'>
+                        <input type="hidden" name="pageNum" value="${cri.pageNum}">
+                        <input type="hidden" name="amount" value="${cri.amount}">
+                        <input type='hidden' name='type' value='<c:out value="${cri.type}"/>' />
+                        <input type='hidden' name='keyword' value='<c:out value="${cri.keyword}"/>' />
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <!-- <div class="panel-heading">
+                    <i class="fa fa-comments fa-fw"></i> Reply
+                </div> -->
+                <!-- /.panel-heading -->
+                <div class="panel-heading">
+                    <i class="fa fa-comments fa-fw"></i> Reply
+                    <button id='addReplyBtn' class='btn btn-primary btn-xs pull-right'>New Reply</button>
+                </div>
+                <div class="panel-body">
+                    <ul class="chat">
+                        <li class="left clearfix" data-rno='12'>
+                            <div>
+                                <div class="header">
+                                    <strong class="primary-font">user00</strong>
+                                    <small class="pull-right text-muted">2018-01-01 13:13</small>
+                                </div>
+                                <p>Good job!</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <%@include file="../includes/footer.jsp"%>
+    ```
+---------
+- 데이터베이스 인덱스 설계
+    - 댓글에 대해서 우선적으로 고려해야 하는 일은 댓글을 조회할때 댓글의 번호가 아닌 해당 게시물의 번호가 중심이 된다는 점
+    - 인덱스를 사용하게 되면 정렬을 피할 수 있기 때문에 order by를 생략할 수 있음
+    ```sql
+    create index idx_reply on tbl_reply (bno desc, rno asc);
+
+    select /*+ INDEX(tbl_reply idx_reply) */
+    rownum rn, bno, rno, reply, replyer, replyDate, updatedate
+    from tbl_reply
+    where bno = 5
+    and rno > 0;
+    ```
+    - ReplyMapper.xml
+    ```xml
+    <select id="getListWithPaging" resultType="org.zerock.domain.ReplyVO">
+		<![CDATA[
+		select bno, rno, reply, replyer, replyDate, updatedate
+		from(
+				select /*+ INDEX(tbl_reply idx_reply) */
+				rownum rn, bno, rno, reply, replyer, replyDate, updatedate
+				from tbl_reply
+				where bno = #{bno}
+				and rno > 0
+				and rownum <= #{cri.pageNum} * #{cri.amount}
+			)
+		where rn > (#{cri.pageNum} - 1) * #{cri.amount}
+		]]>
+	</select>
+    ```
+-------
+- 댓글 수 파악
+    - ReplyMapper.java
+    ```java
+    public int getCountByBno(Long bno);
+    ```
+    - ReplyMapper.xml
+    ```xml
+    <select id="getCountByBno" resultType="int">
+		<![CDATA[
+		select count(rno) from tbl_reply where bno = #{bno}
+		]]>
+	</select>
+    ```
+    - ReplyPageDTO.java
+    ```java
+    package org.zerock.domain;
+
+    import java.util.List;
+
+    import lombok.AllArgsConstructor;
+    import lombok.Data;
+    import lombok.Getter;
+
+    @Data
+    @AllArgsConstructor
+    @Getter
+    public class ReplyPageDTO {
+        private int replyCnt;
+        private List<ReplyVO> list;
+    }
+    ```
+    - ReplyService.java
+    ```java
+    public ReplyPageDTO getListPage(Criteria cri, Long bno);
+    ```
+    - ReplyServiceImpl.java
+    ```java
+    public ReplyPageDTO getListPage(Criteria cri, Long bno) {
+		return new ReplyPageDTO(mapper.getCountByBno(bno), mapper.getListWithPaging(cri, bno));
+	}
+    ```
+    - ReplyController.java
+        - getList 수정
+    ```java
+    // 댓글 목록
+	@GetMapping(value="/pages/{bno}/{page}", produces= {MediaType.APPLICATION_ATOM_XML_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE})
+	public ResponseEntity<ReplyPageDTO> getList(@PathVariable("page") int page, @PathVariable("bno") Long bno){
+		Criteria cri = new Criteria(page, 10);
+		
+		log.info("get Reply List bno: " + bno);
+		
+		log.info("cri : " + cri);
+		
+		return new ResponseEntity<>(service.getListPage(cri, bno), HttpStatus.OK);
+	}
+    ```
+    - reply.js
+        - 일부 수정
+    ```js
+    // 댓글 목록
+	function getList(param, callback, error){
+		var bno = param.bno;
+		
+		var page = param.page || 1;
+		
+		$.getJSON("/replies/pages/" + bno + "/" + page + ".json", 
+		function(data){
+			if(callback){
+				//callback(data); 댓글 목록만 가져오는 경우
+				callback(data.replyCnt, data.list);	// 댓글 숫자와 목록을 가져오는 경
+			}
+		}).fail(function(xhr, status, err){
+			if(error){
+				error();
+			}
+		});
+	}
+    ```
+    ```js
+    function showList(page){
+		console.log("show list : " + page);
+		
+		replyService.getList({bno:bnoValue, page:page||1}, function(list){
+			
+			console.log("replyCnt : " + replyCnt);
+			console.log("list : " + list);
+			console.log(list);
+			
+			if(page == -1){
+				pageNum = Math.ceil(replyCnt/10.0);
+				showList(pageNum);
+				return;
+			}
+			
+			var str="";
+			if(list == null || list.length == 0){
+				replyUL.html("");
+				
+				return;
+			}
+			for(var i=0, len=list.length || 0; i<len; i++){
+				str +="<li class='left clearfix' data-rno='" + list[i].rno+"'>";
+				str +="<div><div class='header'><strong class='primary-font'>" + list[i].replyer+"</strong>";
+				str +="<small class='pull-right text-muted'>" + replyService.displayTime(list[i].replyDate) +"</small></div>";
+				str +="<p>" + list[i].reply+"</p></div></li>";
+			}
+			replyUL.html(str);
+		});//end function
+	}//end showList
+    ```
+    ```js
+    modalRegisterBtn.on("click", function(e){
+		var reply = {
+			reply: modalInputReply.val(),
+			replyer: modalInputReplyer.val(),
+			bno: bnoValue
+		};
+		
+		replyService.add(reply, function(result){
+			alert(result);
+			
+			modal.find("input").val("");
+			modal.modal("hide");
+			
+			//showList(1);
+			showList(-1);
+		});
+	});
+    ```
+------
+ - 댓글 페이징 추가
+    - get.jsp
+        - \<div class="panel-footer">\</div> 추가
+    ```js
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <!-- <div class="panel-heading">
+                    <i class="fa fa-comments fa-fw"></i> Reply
+                </div> -->
+                <!-- /.panel-heading -->
+                <div class="panel-heading">
+                    <i class="fa fa-comments fa-fw"></i> Reply
+                    <button id='addReplyBtn' class='btn btn-primary btn-xs pull-right'>New Reply</button>
+                </div>
+                <div class="panel-body">
+                    <ul class="chat">
+                        <!-- <li class="left clearfix" data-rno='12'>
+                            <div>
+                                <div class="header">
+                                    <strong class="primary-font">user00</strong>
+                                    <small class="pull-right text-muted">2018-01-01 13:13</small>
+                                </div>
+                                <p>Good job!</p>
+                            </div>
+                        </li> -->
+                    </ul>
+                </div>
+                <div class="panel-footer"></div>
+            </div>
+        </div>
+    </div>
+    ```
+    - get.jsp
+        - 스크립트 추가
+    ```jsp
+    <!-- 댓글 페이징 -->
+	var pageNum = 1;
+	var replyPageFooter = $(".panel-footer");
+	
+	function showReplyPage(replyCnt){
+		var endNum = Math.ceil(pageNum / 10.0) * 10;
+		var startNum = endNum - 9;
+		
+		var prev = startNum != 1;
+		var next = false;
+		
+		if(endNum * 10 >= replyCnt){
+			endNum = Math.ceil(replyCnt/10.0);
+		}
+		
+		if(endNum * 10 < replyCnt){
+			next = true;
+		}
+		
+		var str = "<ul class='pagination pull-right'>";
+		
+		if(prev){
+			str+= "<li class='page-item'><a class='page-link' href='" + (startNum -1)+"'>Previous</a></li>";
+		}
+		
+		for(var i=startNum; i<=endNum; i++){
+			var active = pageNum == i? "active":"";
+			
+			str+= "<li class='page-item " + active + " '><a class='page-link' href='"+ i + "'>" + i + "</a></li>";
+		}
+		
+		if(next){
+			str+= "<li class='page-item'><a class='page-link' href='" + (endNum +1)+"'>Next</a></li>";
+		}
+		
+		str += "</ul></div>";
+		
+		console.log(str);
+		
+		replyPageFooter.html(str);
+	}
+    ```
+    - get.jsp
+        - showList 함수에 댓글 페이징 함부 호출 추가
+    ```jsp
+    function showList(page){
+		console.log("show list : " + page);
+		
+		replyService.getList({bno:bnoValue, page:page||1}, function(replyCnt, list){
+			
+			console.log("replyCnt : " + replyCnt);
+			console.log("list : " + list);
+			console.log(list);
+			
+			if(page == -1){
+				pageNum = Math.ceil(replyCnt/10.0);
+				showList(pageNum);
+				return;
+			}
+			
+			var str="";
+			if(list == null || list.length == 0){
+				replyUL.html("");
+				
+				return;
+			}
+			for(var i=0, len=list.length || 0; i<len; i++){
+				str +="<li class='left clearfix' data-rno='" + list[i].rno+"'>";
+				str +="<div><div class='header'><strong class='primary-font'>" + list[i].replyer+"</strong>";
+				str +="<small class='pull-right text-muted'>" + replyService.displayTime(list[i].replyDate) +"</small></div>";
+				str +="<p>" + list[i].reply+"</p></div></li>";
+			}
+			replyUL.html(str);
+			
+            // 댓글 페이징
+			showReplyPage(replyCnt);
+		});//end function
+	}//end showList
+    ```
+    - get.jsp
+        - 페이지 클릭 시 이동
+    ```jsp
+    replyPageFooter.on("click", "li a", function(e){
+		e.preventDefault();
+		console.log("page click");
+		
+		var targetPageNum = $(this).attr("href");
+		
+		pageNum = targetPageNum;
+		
+		showList(pageNum);
+	});
+    ```
+    - get.jsp
+        - 수정 삭제 시 pageNum 활용
+    ```jsp
+    modalModBtn.on("click", function(e){
+		var reply = {rno:modal.data("rno"), reply: modalInputReply.val()};
+		
+		replyService.update(reply, function(result){
+			alert(result);
+			modal.modal("hide");
+			showList(pageNum);
+		});
+	});
+	
+	modalRemoveBtn.on("click", function(e){
+		var rno = modal.data("rno");
+		
+		replyService.remove(rno, function(result){
+			alert(result);
+			modal.modal("hide");
+			showList(pageNum);
+		});
+	});
+    ```
