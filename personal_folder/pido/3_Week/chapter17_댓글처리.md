@@ -291,6 +291,7 @@ and rno > 0;
 2. 비즈니스단 처리    
 - ReplyPageDTO는 ```@AllArgsConstructor``` 어노테이션을 이용하여 replyCnt와 list를 생성자의 파라미터로 처리한다. 
 - ReplyService 인터페이스와 ReplyServiceImpl 클래스에는 ReplyPageDTO를 반환하는 메서드를 추가한다. 
+- ReplyPageDTO객체를 JSON으로 전송하므로 'replyCnt'와 'list' 속성의 JSON문자열이 전송된다. 
 ```java
 // ReplyService
 public ReplyPageDTO getListPage(Criteria cri, Long bno);
@@ -314,8 +315,8 @@ public ResponseEntity<ReplyPageDTO> getList(@PathVariable("page") int page, @Pat
 ```
 ![image](https://user-images.githubusercontent.com/22673024/78467982-ae60fb80-774d-11ea-9d14-d50f747877e8.png)
 
-- ReplyPageDTO객체를 JSON으로 전송하므로 'replyCnt'와 'list' 속성의 JSON문자열이 전송된다. 
 
+3. 댓글 페이지 번호 출력 로직
 ```jsp
 var pageNum = 1;
 var replyPageFooter = $(".panel-footer");
@@ -324,38 +325,54 @@ function showReplyPage(replyCnt){
 	
 	var endNum = Math.ceil(pageNum / 10.0) * 10;  
 	var startNum = endNum - 9; 
-
+	
 	var prev = startNum != 1;
 	var next = false;
-
+	
 	if(endNum * 10 >= replyCnt){
 		endNum = Math.ceil(replyCnt/10.0);
 	}
-
+	
 	if(endNum * 10 < replyCnt){
 		next = true;
 	}
-
+	
 	var str = "<ul class='pagination pull-right'>";
-
+	
 	if(prev){
 		str+= "<li class='page-item'><a class='page-link' href='"+(startNum -1)+"'>Previous</a></li>";
 	}
-
+	
 	for(var i = startNum ; i <= endNum; i++){
-
+	
 		var active = pageNum == i? "active":"";
 		str+= "<li class='page-item "+active+" '><a class='page-link' href='"+i+"'>"+i+"</a></li>";
 	}
-
+	
 	if(next){
 		str+= "<li class='page-item'><a class='page-link' href='"+(endNum + 1)+"'>Next</a></li>";
 	}
-
+	
 	str += "</ul></div>";
 	console.log(str);
 	replyPageFooter.html(str);
 
 }
+```
 
+4. 페이지 번호 클릭 이벤트
+```jsp
+replyPageFooter.on("click", "li a", function(e){
+		
+	// 댓글의 페이지 번호는 <a>태그 내에 존재하므로 기본적인 <a>태그 동작을 제한한다. 
+	e.preventDefault();
+	console.log("page Click");
+	
+	var targetPageNum = $(this).attr("href");
+	console.log("targetPageNum : " + targetPageNum);
+	
+	pageNum = targetPageNum;
+	
+	showList(pageNum);
+});
 ```
