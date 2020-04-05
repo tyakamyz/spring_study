@@ -149,9 +149,9 @@ public ResponseEntity<String> modify(@RequestBody ReplyVO vo, @PathVariable("rno
 - 즉시실행함수는 함수의 시행 결과가 바깥쪽에 선언된 변수에 할당된다.
 - $(document).ready.. 는 여러번 나와도 상관없음! 
 
-< reply.js 완성본> : 
+< reply.js 완성본>                      :
 [reply.js](https://github.com/tyakamyz/spring_study/files/4431140/reply.js.txt)   
-< js호출하는 jsp 완성본 > : 
+< js호출하는 jsp 완성본 >
 [get.jsp](https://github.com/tyakamyz/spring_study/files/4431177/get.jsp.txt)
 
 모듈화 패턴의 js 사용 방법 
@@ -252,22 +252,22 @@ function displayTime(timeValue){
 		
 	var today = new Date();
 	var gap = today.getTime() - timeValue;
-
+	
 	var dateObj = new Date(timeValue);
 	var str = "";
-
+	
 	if(gap < (1000 * 60 * 60 * 24)){
 		var hh = dateObj.getHours();
 		var mi = dateObj.getMinutes();
 		var ss = dateObj.getSeconds();
-
+		
 		return [(hh > 9 ? '' : '0') + hh, ':', (mi > 9 ? '' : '0') + mi, ':', (ss > 9 ? '' : '0') + ss].join('');
-
+		
 	}else{
 		var yy = dateObj.getFullYear();
 		var mm = dateObj.getMonth() + 1; // getMonth() is zero-based
 		var dd = dateObj.getDate();
-
+		
 		return [yy, '/', (mm > 9 ? '' : '0') + mm, '/', (dd > 9 ? '' : '0') + dd].join('');
 	}
 }
@@ -288,3 +288,74 @@ where bno = 1--(게시물번호)
 and rno > 0;
 ```
 
+2. 비즈니스단 처리    
+- ReplyPageDTO는 ```@AllArgsConstructor``` 어노테이션을 이용하여 replyCnt와 list를 생성자의 파라미터로 처리한다. 
+- ReplyService 인터페이스와 ReplyServiceImpl 클래스에는 ReplyPageDTO를 반환하는 메서드를 추가한다. 
+```java
+// ReplyService
+public ReplyPageDTO getListPage(Criteria cri, Long bno);
+
+// ReplyServiceImpl
+public ReplyPageDTO getListPage(Criteria cri, Long bno){
+	return new ReplyPageDTO(mapper.getCountBybno(bno), 
+							mapper.getListWithPaging(cri, bno));
+}
+
+// ReplyController 
+@GetMapping(value="/pages/{bno}/{page}", produces= {MediaType.APPLICATION_XML_VALUE,
+													MediaType.APPLICATION_JSON_UTF8_VALUE })
+public ResponseEntity<ReplyPageDTO> getList(@PathVariable("page") int page, @PathVariable("bno") Long bno){
+	Criteria cri = new Criteria(page, 10);
+	log.info("get Reply List bno : " + bno);
+	log.info("cri : " + cri);
+	
+	return new ResponseEntity<>(service.getListPage(cri, bno), HttpStatus.OK);
+}
+```
+![image](https://user-images.githubusercontent.com/22673024/78467982-ae60fb80-774d-11ea-9d14-d50f747877e8.png)
+
+- ReplyPageDTO객체를 JSON으로 전송하므로 'replyCnt'와 'list' 속성의 JSON문자열이 전송된다. 
+
+```jsp
+var pageNum = 1;
+var replyPageFooter = $(".panel-footer");
+
+function showReplyPage(replyCnt){
+	
+	var endNum = Math.ceil(pageNum / 10.0) * 10;  
+	var startNum = endNum - 9; 
+
+	var prev = startNum != 1;
+	var next = false;
+
+	if(endNum * 10 >= replyCnt){
+		endNum = Math.ceil(replyCnt/10.0);
+	}
+
+	if(endNum * 10 < replyCnt){
+		next = true;
+	}
+
+	var str = "<ul class='pagination pull-right'>";
+
+	if(prev){
+		str+= "<li class='page-item'><a class='page-link' href='"+(startNum -1)+"'>Previous</a></li>";
+	}
+
+	for(var i = startNum ; i <= endNum; i++){
+
+		var active = pageNum == i? "active":"";
+		str+= "<li class='page-item "+active+" '><a class='page-link' href='"+i+"'>"+i+"</a></li>";
+	}
+
+	if(next){
+		str+= "<li class='page-item'><a class='page-link' href='"+(endNum + 1)+"'>Next</a></li>";
+	}
+
+	str += "</ul></div>";
+	console.log(str);
+	replyPageFooter.html(str);
+
+}
+
+```
