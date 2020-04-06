@@ -142,11 +142,11 @@ public class CommonExceptionAdvice {
 # @ResponseEntity
 </details>
 <details markdown="1">
-<summary style="font-size:20px;"> @ </summary>
+<summary style="font-size:20px;"> @ExceptionHandler </summary>
 
 </details>
 <details markdown="1">
-<summary style="font-size:20px;"> @ </summary>
+<summary style="font-size:20px;"> @ResponseStatus </summary>
 
 </details>
 <details markdown="1">
