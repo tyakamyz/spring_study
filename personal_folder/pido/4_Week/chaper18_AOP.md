@@ -197,7 +197,7 @@ public class LogAdvice {
 
 스프링2 버전 이후 자동으로 Proxy 객체를 만들어주는 설정을 추가한다.   
 
-<img src="https://user-images.githubusercontent.com/22673024/78792542-32d0aa00-79ec-11ea-9c73-fea13298d88e.png" width="40%">
+<img src="https://user-images.githubusercontent.com/22673024/78792542-32d0aa00-79ec-11ea-9c73-fea13298d88e.png" width="50%">
 
 root-context.xml 
 ```xml
@@ -225,7 +225,7 @@ root-context.xml
 * ```<component-scan>```으로 service와 aop 패키지를 스캔한다.
 * 위 과정에서 SampleServiceImpl 클래스와 LogAdvice는 스프링의 빈으로 등록된다.
 * ```<aop:aspectj-autoproxy>```를 이용하여 LogAdvice에 설정한 @Before가 동작한다.   
-<img src="https://user-images.githubusercontent.com/22673024/78793440-6233e680-79ed-11ea-96e0-9cb7a7f2e4cc.png" width="40%">
+<img src="https://user-images.githubusercontent.com/22673024/78793440-6233e680-79ed-11ea-96e0-9cb7a7f2e4cc.png" width="50%">
 
 * SampleServiceImpl 클래스에 아이콘이 추가된 것을 확인할 수 있다. (완벽한 동작은 아니지만 도움이 됨...!)
 
@@ -275,8 +275,19 @@ public class SampleServiceTests {
 * AOP 설정을 한 Target에 대해서 Proxy 객체가 정상적으로 만들어져 있는지 확인한다.
 * ```<aop:aspectj-autoproxy>``` 가 정상적으로 모든 동작(LogAdvice에 설정한 @Before가 동작)을 하고, LogAdvice에 설정문제가 없다면   
 → **service변수의 클래스**는 단순히 org.zerock.service.SampleServiceImpl의 인스턴스가 아닌 생성된 **<U>Proxy 클래스의 인스턴스가 된다.</U>**   
-*log...*   
-<img src="https://user-images.githubusercontent.com/22673024/78796071-d2903700-79f0-11ea-9d6c-828cfc8accd1.png" width="40%">
+<img src="https://user-images.githubusercontent.com/22673024/78796071-d2903700-79f0-11ea-9d6c-828cfc8accd1.png" width="60%">
 
+* 단순히 service 변수 출력 시 SampleServiceImpl 클래스의 인스턴스처럼 보이지만, 
+getClass() 이용시 JDK의 다이나믹 프록시 기법이 적용된 결과(com.sun.proxy.$Proxy)를 볼 수 있다. 
+
+1-6-1. 프록시 기법을 적용한 테스트코드 
+```java
+@Test
+public void testAdd() throws Exception {
+    log.info(service.doAdd("123", "456"));
+}
+```
+    INFO : org.zerock.aop.LogAdvice - ==============================
+    INFO : org.zerock.service.SampleServiceTests - 579
 
 
