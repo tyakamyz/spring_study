@@ -77,3 +77,202 @@
 |JoinPoint| **Advice를 적용 가능한 지점**, Spring에서 관리하는 Bean들의 모든 메서드
 |pointcut| **관심사와 비즈니스 로직이 결합되는 지점을 결정하는 것**, JoinPoint의 부분집합으로도 표현
 |Aspect| **Advice + pointcut**, Advice의 추상화, AOP의 기본 모듈
+
+### 18.2 AOP 실습
+
+```java
+@Aspect
+@Log4j
+@Component
+public class LogAdvice {
+	
+	@Before("execution(* org.zerock.service.SampleService*.*(..))")
+	public void logBefore() {
+		
+		log.info("=====================================");
+	}
+
+}
+
+```
+ - 기존의 코드를 작성할 때 항상 쓰던 log.info()를 Advice로 간주
+ - @Aspect는 해당 클래스 객체가 Aspect를 구현한 것임을 나타내기 위해 사용
+ - @Component는 해당 클래스를 스프링 빈으로 인식하기 위해 사용
+ - Advice와 관련된 어노테이션들은 내부적으로 Pointcut을 지정한다. 아니면 별도의 @Pointcut 으로 지정해서 사용 가능하다.
+ - @Before("execution(* org.zerock.service.SampleService*.*(..))") 는 AspectJ의 표현식이다
+ >   - 어떤 위치에 Advice를 적용할 것인지를 결정하는 Pointcut
+ >   - execution의 경우 접근제한자와 특정 클래스의 메서드를 지정할 수 있다.  
+ >   - 맨앞의 '*'는 접근제한자를 의미하고, 맨뒤의 '*'는 클래스의 이름과 메서드의 이름을 의미한다.
+ >   -  execution([수식어] [리턴타입] [클래스이름] [이름](\[파라미터]\)<br/>
+
+|구분|설명
+|--|--
+|수식어|생략가능, public,protected 등
+|리턴타입|메서드의 리턴타입 지정
+|클래스이름, 이름| 클래스의 이름 및 메서드 이름 지정
+|파라미터 | 메서드 파라미터 지정
+|'*'| 모든 값
+|'..'| 0개 이상
+
+    따라서, org.zerock.service.SampleService 포함된, 모든 0개이상의 파라미터를 가진 메서드들을 대상으로 실행한다.
+
+### 18.3 AOP 설정
+
+ - 스프링 2버전 이후에는 간단히 자동으로 Proxy 객체를 만들어주는 설정을 추가
+ ```xml
+<context:annotation-config></context:annotation-config>
+	
+<context:component-scan base-package="org.zerock.service"></context:component-scan>
+<context:component-scan base-package="org.zerock.aop"></context:component-scan>
+
+<aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+ ```
+
+- root-context.xml의 namespace에 'aop'와 'context' 추가
+- component-scan 등록
+- \<aop:aspectj-autoproxy>를 이용해 위의 @Before가 동작한다.
+
+ <img src="../img/AOP_Icon.png"></br>
+  > -   AOP 적용시 위의 동그라미친 아이콘이 표시된다. 해당 아이콘 클릭시 @Aspect 로 이동된다.
+
+#### 18.3.1 Java 설정
+
+- @ComponentScan 과 @EnableAspectJAutoProxy 이용
+```java
+@Configuration
+@ComponentScan(basePackages = {"org.zerock.service"})
+@ComponentScan(basePackages = "org.zerock.aop")
+@EnableAspectJAutoProxy
+
+@MapperScan(basePackages = {"org.zerock.mapper"})
+```
+
+### 18.4 AOP 테스트
+
+ - 정상적인 상황일 시 SampleServiceImpl, LogAdvice는 같이 묶여서 자동으로 Proxy 객체가 생성된다.
+ - 결과 값으로 com.sun.proxy.$Proxy를 볼 수 있는데 JDK의 다이나믹 프록시(dynamic Proxy)기법이 적용된 결과로 볼 수 있다.
+
+ #### 18.4.1 args를 이용한 파라미터 추적
+
+  - 간단한 로그 외에도 상황에 따라 해당 메서드에 전달되는 파라미터가 무엇인지, 예외가 발생했을 때 어떤 파라미터에 문제가 있는지 확인 할 수 있다.
+  - Aspect의 @Before 등의 어노테이션 설정 시에 args를 이용하면 간단히 파라미터를 구할 수 있다.
+
+  ```java
+  @Before
+  ("execution(* org.zerock.service.SampleService*.doAdd(String,String)) && args(str1, str2)")
+	public void logBeforeWithParam(String str1, String str2) {
+		
+		log.info("str1 : " + str1);
+		log.info("str2 : " + str2);
+	}
+  ```
+  - doAdd메서드는 **파라미터 타입** 을 지정하고
+  - && args 부분으로 **변수명**을 지정하는데 해당 정보를 이용해서 logBeforeWithParam 메서드의 파라미터를 설정하게 된다.
+  - **&& args** 를 이용하는 설정은 간단히 파라미터를 찾아서 기록할 때 유용하지만 다른 여러 종류의 메서드에 적용하는 데는 간단하지 않다.
+
+#### 18.4.2 @AfterThrowing
+ - 코드를 실행하다 보면 파라미터의 값이 잘못되어 예외가 발생하는 경우가 많다.
+ - AOP의 @AfterThrowing은 지정된 대상이 예외를 발생한 후 에 동작하면서 문제를 찾을 수 있도록 도와준다.
+ ```java
+ @AfterThrowing(pointcut = "execution(* org.zerock.service.SampleService*.*(..))", throwing="exception")
+	public void logException(Exception exception) {
+		log.info("Exceptioon......!!!!!");
+		log.info("esception : " + exception);
+	}
+ ```
+
+ - 실행 결과
+ ```log
+ INFO : org.zerock.aop.LogAdvice - str1 : 123
+INFO : org.zerock.aop.LogAdvice - str2 : AB C
+INFO : org.zerock.aop.LogAdvice - Exceptioon......!!!!!
+INFO : org.zerock.aop.LogAdvice - esception : java.lang.NumberFormatException: For input string: "AB C"
+ ```
+
+ ### 18.5 @Around와 ProceedingJoinPoint
+  - AOP 를 이용해 좀 더 구체적인 처리를 하고 싶다면 @Around와 ProceedingJoinPoint를 이용해야 한다.
+   - @Around는 조금 다르게 작동하는데, 직접 대상 메서드를 실행할 수 있는 권한을 가지고 있고, 메서드의 실행 전과 실행 후에 처리가 가능하다.
+   - ProceedingJoinPoint는 @Around와 같이 결합해서 파라미터나 예외 등을 처리할 수 있다.
+```java
+@Around("execution(* org.zerock.service.SampleService*.*(..))")
+public Object logTime(ProceedingJoinPoint pjp) {
+    
+    long start = System.currentTimeMillis();
+    
+    log.info("Target: " + pjp.getTarget());;
+    log.info("Param : " + Arrays.toString(pjp.getArgs()));
+    
+    //invoke method
+    Object result = null;
+    
+    try {
+        result = pjp.proceed();
+    } catch (Throwable e) {
+        // TODO: handle exception
+        e.printStackTrace();
+    }
+    
+    long end = System.currentTimeMillis();
+    
+    log.info("Time : " + (end - start));
+    
+    return result;
+}
+```  
+
+- ProceedingJoinPoint는 AOP의 대상이 되는 Target이나 파라미터 등을 파악할 뿐만 아니라, 직접 실행을 결정할 수 있다.
+- @Before 등과 달리 @Around가 적용되는 메서드의 경우에는 리턴 타입이 void가 아닌 타입으로 설정하고, 메서드의 실행 결과 역시 직접 반환하는 형태로 작성해야만 한다.
+- 실행결과  
+
+```log
+INFO : org.zerock.aop.LogAdvice - Target: org.zerock.service.SampleServiceImpl@2c78324b
+INFO : org.zerock.aop.LogAdvice - Param : [123, 456]
+INFO : org.zerock.aop.LogAdvice - =====================================
+INFO : org.zerock.aop.LogAdvice - str1 : 123
+INFO : org.zerock.aop.LogAdvice - str2 : 456
+INFO : org.zerock.aop.LogAdvice - Time : 2
+INFO : org.zerock.service.SampleServiceTests - 579
+```
+
+- 결과를 보면 @Around가 먼저 동작하고, @Before 등이 실행된 후에 메서드가 실행되는 걸린 시간이 로그로 기록된다.
+
+> #### 18.6 추가 내용
+```java
+@Pointcut("expression=within(com.ktko.test.*)")
+private void publicTarget() {
+    
+}
+
+@Around("publicTarget()")
+    public Object measure(ProceedingJoinPoint joinPoint) throws Throwable {
+    long start = System.nanoTime();
+    try {
+        Object result = joinPoint.proceed();
+        return result;
+    } finally {
+        Signature sig = joinPoint.getSignature();
+
+```
+
+ - 위의 소스에서는 @Pointcut 으로 함수에 할당하여 Advice 어노테이션내 pointcut 매게변수에 할당한 함수를 사용하는 것을 볼 수 있다.
+ - exception 의 종류가 일반적인 'Exception' 타입이아닌 'Throwable' 타입임을 확인한다.
+ - ProceedingJoinPoint 인터페이스의 메서드
+
+ |메서드|설명
+ |--|--
+ |Signature getSignature()|호출되는 메서드에 대한 정보
+ |Object getTarget() | 대상 객체(Target)
+ |Object[] getArgs() | 파라미터의 목록
+ |proceed()| 의존 함수 실행
+ |proceed(Object[])| 의존 함수 실행(매게변수는 의존 함수 파라미터와 같은 타입을 가져야한다)
+ - ProceedingJoinPoint.getSignature() 로 정의된 Signature 인터페이스는 호출되는 메서드와 관련된 정보를 제공하며 다음과 같은 메서드를 정의한다.
+
+ |메서드|설명
+ |--|--
+ |String getName | 메서드의 이름
+ |String toLongString()| 메서드를 완전하게 표현한 문장(메서드의 리턴 타입, 파라미터 타입이 모두 표시)
+ |String toShortString()|메서드의 축약 표현 문장(기본 구현은 메서드의 이름만을 구한다)
+
+
+
+## **Chapter 19** 스프링에서 트랜잭션 관리
