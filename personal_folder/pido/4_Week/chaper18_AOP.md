@@ -25,7 +25,7 @@ AOP란?
 |Jointpoint	    |Advice를 적용해야 되는 부분(ex : 필드, 메소드 / 스프링에서는 메소드만 해당)
 |Pointcut	    |Jointpoint의 부분으로 실제로 Advice가 적용된 부분
 |Weaving        |Advice를 핵심기능에 적용하는 행위
-##### 참고 : https://hongku.tistory.com/114
+###### 참고 : https://hongku.tistory.com/114
 
 
 ### **타깃(Target)**   
@@ -37,7 +37,18 @@ AOP란?
 ### **조인포인트(JoinPoint)**   
     Target의 객체가 가진 메서드.  
 ### **포인트커트(PointCut)**   
-    어떤 메서드에 관심사를 결합할 것인지의 결정. 관심사와 비즈니스 로직이 결합되는 지점을 결정하는 것.
+    어떤 메서드(JointPoint)에 관심사(Advice)를 결합할 것인지의 결정. 관심사와 비즈니스 로직이 결합되는 지점을 결정하는 것.
+    
+|구분                   | 설명	 
+|-----------------------|----------------------
+|execuition(@execution) | "메서드" 를 기준으로 PointCut을 설정
+|within(@within)        | "특정한 타입(클래스)" 을 기준으로 PointCut을 설정
+|this           	    | "주어진 인터페이스를 구현한 객체" 를 대상으로 PointCut을 설정
+|args(@args)    	    | "특정한 파라미터를 가지는" 대상들만을 PointCut으로 설정
+|@annotation            | "특정한 어노테이션이 적용된" 대상들만을 PointCut으로 설정
+
+* Target은 결과적으로 PointCut에 의해서 자신에게는 없는 기능들을 가지게 된다.
+
 ### **애스팩트(Aspect)**   
     관심사 자체   
 ### **어드바이스(Advice)**   
@@ -50,6 +61,10 @@ AOP란?
 |예외발생 이후   |After Throwing Advice	    |예외가 발생한 뒤 동작하는 코드
 |이후            |After Advice   	        |정상적으로 실행되거나 예외가 발생했을 때 구분없이 실행되는 코드
 |주위            |Around Advice             |메서드의 실행 자체를 제어할 수 있는 가장 강력한 코드. 직접 대상 메서드를 호출하고 결과나 예외를 처리할 수 있다.
+
+* Advice는 과거에 별도의 인터페이스로 구현되고, 이를 클래스로 구현하는 방식으로 제작했으나 스프링3 버전 이후에는 **어노테이션만으로** 모든 설정이 가능하다.
+* Target에 어떤 Advice를 적용할 것인지는 **XML을 이용한 설정**을 이용할 수 있고, **어노테이션을 이용하는 방식**을 이용할 수 있다.
+
 
 
 
