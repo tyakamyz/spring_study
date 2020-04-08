@@ -65,19 +65,218 @@ AOP란?
 * Advice는 과거에 별도의 인터페이스로 구현되고, 이를 클래스로 구현하는 방식으로 제작했으나 스프링3 버전 이후에는 **어노테이션만으로** 모든 설정이 가능하다.
 * Target에 어떤 Advice를 적용할 것인지는 **XML을 이용한 설정**을 이용할 수 있고, **어노테이션을 이용하는 방식**을 이용할 수 있다.
 
+<hr />
+
+AOP 실습
+---------------
+
+* AOP 기능은 주로 일반적인 JavaAPI를 이용하는 클래스(POJO)들에 적용한다.
+* 서비스 계층에 AOP를 적용
+    - 서비스 계층의 메서드 호출 시 모든 파라미터들을 로그로 기록
+    - 메서드들간의 실행 시간을 기록
+
+1-1. 스프링 , AOP 버전 업   
+```xml
+<properties>
+    <java-version>1.8</java-version>
+    <org.springframework-version>5.0.7.RELEASE</org.springframework-version>
+    <org.aspectj-version>1.9.0</org.aspectj-version>
+    <org.slf4j-version>1.7.25</org.slf4j-version>
+</properties>
+```   
+    AOP는 AspectJ 라이브러리의 도움을 받기 때문에 스프링버전에 맞춰 올려준다.
+
+1-2. pom.xml 추가
+```xml
+<!-- 테스트 library 추가 -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-test</artifactId>
+    <version>${org.springframework-version}</version>
+</dependency> 
+
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+    <version>1.18.0</version>
+    <scope>provided</scope>
+</dependency>  
+
+<dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <version>4.12</version>
+    <scope>test</scope>
+</dependency>
+
+<!-- aspectj 추가 -->
+<dependency>
+    <groupId>org.aspectj</groupId>
+    <artifactId>aspectjrt</artifactId>
+    <version>${org.aspectj-version}</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.aspectj/aspectjweaver -->
+<dependency>
+    <groupId>org.aspectj</groupId>
+    <artifactId>aspectjweaver</artifactId>
+    <version>${org.aspectj-version}</version>
+</dependency>
+```   
+    스프링은 AOP 처리가 된 객체를 생성할 때 AspectJ Weaver 라이브러리의 도움을 받아 동작한다.
+
+1-3. 서비스 계층 설계
+
+SampleService 인터페이스
+```java
+package org.zerock.service;
+
+public interface SampleService {
+	
+	public Integer doAdd(String str1, String str2) throws Exception;
+}
+```
+
+SampleServiceImpl 클래스
+```java
+package org.zerock.service;
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class SampleServiceImpl implements SampleService {
+
+	@Override
+	public Integer doAdd(String str1, String str2) throws Exception {
+		
+		return Integer.parseInt(str1) + Integer.parseInt(str2);
+	}
+}
+```
+
+1-4. Advice 작성    
+* 로그를 기록하는 일 ==> 관심사(Aspect) 
+* Advice 는 '관심사(Aspect)'를 실제로 구현한 코드이므로,   
+ 예제로 <U>로그를 기록하는 LogAdvice</U>를 설계한다. 
+
+```java
+package org.zerock.aop;
+
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.springframework.stereotype.Component;
+
+import lombok.extern.log4j.Log4j;
+
+@Aspect
+@Log4j
+@Component
+public class LogAdvice {
+
+	@Before( "execution(* org.zerock.service.SampleService*.*(..))")
+	public void logBefore() {
+		log.info("==============================");
+	}
+	
+	
+}
+```
+* @Aspect : 해당 클래스의 객체가 Ascpect로 구현한 것임을 나타낸다.
+* @Component : 스프링에서 빈(Bean)으로 인식하기 위해 사용한다
+* @Before : BeforeAdvice를 구현한 메서드에 추가한다.    
+    > **execuition**    
+    > "메서드" 를 기준으로 PointCut을 설정   
+    > Aspect의 표현식으로, 접근제한자와 특정 클래스의 메서드를 지정할 수 있다.    
+    > 맨 앞의 * 는 **접근제한자**를 의미하고 맨 뒤의 * 는 **클래스의 이름과 메서드의 이름**을 의미한다. 
+
+* Advice와 관련된 어노테이션들은 내부적으로 PointCut을 지정한다.   
+(PointCut은 별도의 @PountCut으로도 지정해서 사용 가능)   
 
 
+1-5. AOP 설정
 
+스프링2 버전 이후 자동으로 Proxy 객체를 만들어주는 설정을 추가한다.   
 
+<img src="https://user-images.githubusercontent.com/22673024/78792542-32d0aa00-79ec-11ea-9c73-fea13298d88e.png" width="40%">
 
+root-context.xml 
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd">
+	
+	<!-- Root Context: defines shared resources visible to all other web components -->
 
+<context:annotation-config></context:annotation-config>
 
+<context:component-scan base-package="org.zerock.service"></context:component-scan>
+<context:component-scan base-package="org.zerock.aop"></context:component-scan>
 
+<aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+		
+</beans>
+```   
 
+* ```<component-scan>```으로 service와 aop 패키지를 스캔한다.
+* 위 과정에서 SampleServiceImpl 클래스와 LogAdvice는 스프링의 빈으로 등록된다.
+* ```<aop:aspectj-autoproxy>```를 이용하여 LogAdvice에 설정한 @Before가 동작한다.   
+<img src="https://user-images.githubusercontent.com/22673024/78793440-6233e680-79ed-11ea-96e0-9cb7a7f2e4cc.png" width="40%">
 
+* SampleServiceImpl 클래스에 아이콘이 추가된 것을 확인할 수 있다. (완벽한 동작은 아니지만 도움이 됨...!)
 
+<br>
 
+**java 설정 시**   
+> ```java
+> @Configuration
+> @ComponentScan(basePackages = {"org.zerock.service"})
+> @ComponentScan(basePackages = "org.zerock.aop")
+> @EnableAspectJAutoProxy
+> 
+> @MappperScan(basePackages= {"org.zerock.mapper"})
+> public class RootConfig {
+> ```
+> 
 
+1-6. AOP 테스트
+```java
+package org.zerock.service;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import lombok.Setter;
+import lombok.extern.log4j.Log4j;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@Log4j
+@ContextConfiguration({"file:src/main/webapp/WEB-INF/spring/root-context.xml"})
+// @ContextConfiguration(classes= {RootConfig.class}) /* java 설정의 경우 */
+public class SampleServiceTests {
+
+	@Setter(onMethod_ = @Autowired)
+	private SampleService service;
+	
+	@Test
+	public void testClass() {
+		log.info(service);
+		log.info(service.getClass().getName());
+	}
+}
+```
+* AOP 설정을 한 Target에 대해서 Proxy 객체가 정상적으로 만들어져 있는지 확인한다.
+* ```<aop:aspectj-autoproxy>``` 가 정상적으로 모든 동작(LogAdvice에 설정한 @Before가 동작)을 하고, LogAdvice에 설정문제가 없다면   
+→ **service변수의 클래스**는 단순히 org.zerock.service.SampleServiceImpl의 인스턴스가 아닌 생성된 **<U>Proxy 클래스의 인스턴스가 된다.</U>**   
+*log...*   
+<img src="https://user-images.githubusercontent.com/22673024/78796071-d2903700-79f0-11ea-9d6c-828cfc8accd1.png" width="40%">
 
 
 
