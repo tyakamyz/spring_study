@@ -287,7 +287,105 @@ public void testAdd() throws Exception {
     log.info(service.doAdd("123", "456"));
 }
 ```
-    INFO : org.zerock.aop.LogAdvice - ==============================
-    INFO : org.zerock.service.SampleServiceTests - 579
+```java
+INFO : org.zerock.aop.LogAdvice - ==============================
+INFO : org.zerock.service.SampleServiceTests - 579
+```
 
+1-7. args 를 이용한 파라미터 추적
+
+LogAdvice
+```java
+@Before( "execution(* org.zerock.service.SampleService*.doAdd(String, String)) && args(str1, str2)")
+public void logBeforeWithParam(String str1, String str2) {
+    log.info("==============================");
+    log.info("str1 : " + str1);
+    log.info("str2 : " + str2);
+}
+```
+```java
+INFO : org.zerock.aop.LogAdvice - ==============================
+INFO : org.zerock.aop.LogAdvice - str1 : 123
+INFO : org.zerock.aop.LogAdvice - str2 : 456
+INFO : org.zerock.aop.LogAdvice - ==============================
+INFO : org.zerock.service.SampleServiceTests - 579
+```
+* execution PointCut 설정에 doAdd 메서드를 명시하고, 파라미터 타입을 지정한다.
+* '&&args(...' 부분에는 변수명을 지정한다.
+* 위 2종류의 정보를 이용하여 logBeforeWithParam() 메서드의 파라미터를 설정한다.
+* '&&args'를 이용하는 설정은 간단히 파라미터를 찾아서 기록할땐 유용하지만, **파라미터가 다른 여러 종류의 메서드에 적용하는데**에는 간단하지 않다는 단점이 있다. 
+
+1-8. @AfterThrowing
+```java
+@AfterThrowing(pointcut = "execution(* org.zerock.service.SampleService*.*(..))", throwing="exception")
+public void logException(Exception exception) {
+    log.info("Exception.....!!!! ");
+    log.info("exception : " + exception);
+}
+```
+```java
+INFO : org.zerock.aop.LogAdvice - ==============================
+INFO : org.zerock.aop.LogAdvice - str1 : 123
+INFO : org.zerock.aop.LogAdvice - str2 : ABC
+INFO : org.zerock.aop.LogAdvice - Exception.....!!!! 
+INFO : org.zerock.aop.LogAdvice - exception : java.lang.NumberFormatException: For input string: "ABC"
+```
+* @AfterThrowing : 지정된 대상이 예외를 발생한 후에 동작하면서 문제를 찾을 수 있도록 도와주는 어노테이션
+* 'pointcut'과 'throwing' 속성을 지정하고 변수 이름을 exception 으로 지정한다. 
+
+<hr />
+
+@Around 와 ProceedingJoinPoint
+-----------------------------
+
+* @Around : 직접 대상 메서드를 실행할 수 있는 권한을 가지고 있고, 메서드의 실행 전과 실행 후에 처리가 가능하다.
+
+```java
+@Around("execution(* org.zerock.service.SampleService*.*(..))")
+public Object logTime( ProceedingJoinPoint pjp ) {
+    
+    long start = System.currentTimeMillis();
+    
+    log.info("Target : " + pjp.getTarget());
+    log.info("Param : " + Arrays.toString(pjp.getArgs()));
+    
+    // invoke method
+    Object result = null;
+    
+    try {
+        result = pjp.proceed();
+    } catch (Throwable e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+    }
+    
+    long end = System.currentTimeMillis();
+    
+    log.info("TIME : " + (end - start));
+    
+    return result;
+}
+```
+* logTime()의 Pointcut 설정은 '.SampleService*.*(..)'로 지정한다.
+* ```ProceedingJoinPoint``` 파라미터는 AOP의 대상이 되는 **Target이나 파라미터 등을 파악**할 뿐 아니라 **직접 실행을 결정**할 수 있다.
+* @Around 메서드의 경우 리턴타입이 **void가 아닌 타입**으로 설정해야하고, 메서드의 **실행 결과는 직접 반환하는 형태**로 작성해야한다. 
+
+```java
+<test>
+@Test
+public void testAdd() throws Exception {
+    log.info(service.doAdd("123", "456"));
+}
+
+<log>
+INFO : org.zerock.aop.LogAdvice - Target : org.zerock.service.SampleServiceImpl@35a3d49f
+INFO : org.zerock.aop.LogAdvice - Param : [123, 456]
+INFO : org.zerock.aop.LogAdvice - ==============================
+INFO : org.zerock.aop.LogAdvice - ==============================
+INFO : org.zerock.aop.LogAdvice - str1 : 123
+INFO : org.zerock.aop.LogAdvice - str2 : 456
+INFO : org.zerock.aop.LogAdvice - TIME : 0
+INFO : org.zerock.service.SampleServiceTests - 579
+```
+ * 테스트 결과 , @Around 가 먼저 동작하고, @Before 등이 실행된 후에 메서드가 실행되는데 걸린 시간이 로그로 기록된다. 
 
