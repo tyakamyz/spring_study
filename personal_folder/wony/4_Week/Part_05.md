@@ -276,3 +276,101 @@ private void publicTarget() {
 
 
 ## **Chapter 19** 스프링에서 트랜잭션 관리
+ - 비즈니스 계층에서 이루어지는 작업
+ - 비즈니스에서는 쪼개질수 없는 하나의 단위 작업을 말한다.
+ - 사전적 의미로는 '거래'라는 뜻을 가지지만, 현실적으로는 '한 번에 이루어지는 작업의 단위'로 간주한다.
+ - 트랜잭션의 성격 ACID 원칙
+
+|||
+|--|--|
+ |원자성(Atomicity)|하나의 트랜잭션은 모두 하나의 단위로 처리되어야한다. </br> 예로 하나의 트랜잭션이 A와 B로 구성된 경우, 처리결과는 동일해야한다. 하나의 작업만 성공할 경우 실행 전의 상태로 돌아가야한다.|
+ |일관성(Consisency)| 트랜잭션이 성공했다면 DB의 모든 데이터는 일관성을 유지해야한다.</br>트랜잭션으로 처리된 데이터와 일반 데이터 사이에는 전혀 차이가 없어야 한다.|
+ |격리(Isoltion)|트랜잭션으로 처리되는 중간에 외부에서의 간섭은 없어야 한다.|
+ |영속성(Durability)|트랜잭션이 성공적으로 처리되면, 그 결과는 영속적으로 보관되어야 한다.|
+ 
+### 19.1 데이터베이스 설계와 트랜잭션
+ - 데이터 베이스의 저장 구조를 효율적으로 관리하기위해 '정규화'작업 진행
+ - 정규화의 기본은 '중복된 데이터를 제거'해서 데이터의 저장효율을 올리는 것
+ - 기본적으로 정규화 진행시 테이블은 늘어나고, 각 테이블의 데이터양은 줄어든다.
+ - 정규화 진행시 원칙적으로 칼럼으로 처리되지 않는 데이터
+    - 시간이 흐르면 변경되는 데이터를 칼럼으로 기록하지 않는다
+        - 사용자의 생년월일은 칼럼에 기록하지면, 현재 나이는 유지하지 않는다.
+    - 계산이 가능한 데이터를 칼럼으로 기록하지 않는다.
+    - 누구에게나 정해진 값을 이용하는 경우 데이터베이스에서 취급하지 않는다.
+
+### 19.2 트랜잭션 설정
+ - Transaction Manager가 필요
+ - root-context.xml 의 namespace 에서 tx 체크 후 아래 태그 등록
+ ```xml
+ <tx:annotation-driven/>
+ ```
+ - Java 설정에서는 아래의 txManager() 함수를 빈으로 등록
+ ```java
+ @Bean
+ public DataSourceTransactionManager txManager(){
+     return new DataSSourceTransactionManager(dataSource());
+ }
+ ```
+
+#### 19.2.1 @Transactional
+ - 트랜잭션의 처리가 되지않으면 두개의 실행문중 하나의 결과만 적용되는 현상을 볼 수있다.
+ ```java
+ 	@Transactional
+	@Override
+	public void addData(String value) {
+		// TODO Auto-generated method stub
+		
+		log.info("mapper1....................");
+		
+		mapper1.insertCol1(value);
+		
+		log.info("mapper2....................");
+		mapper2.insertCol2(value);
+		log.info("end....................");
+	}
+ ```
+
+ - mapper1이 성공후 mapper2가 실패하면 mapper1이 롤백되며 원점으로 돌아간다.
+ - mapper1,2가 모두 성공되어야만 해당 트랜잭션이 성공한다.
+#### 19.2.1.1 @Transactional 설정 속성
+
+- #### 전파 속성
+
+|속성|설명|
+|--|--|
+|PROPAGATION_MADATORY|작업은 반드시 특정한 트랜잭션이 존재한 사앹에서만 가능|
+|PROPAGATION_NESTED|기존에 트랜잭션이 있는 경우, 포함되어서 실행|
+|PROPAGATION_NEVER|트랜잭션 상황하에 실행되면 예외 발생|
+|PROPAGATION_NOT_SUPPORTED|트랜잭션이 있는 겨웅엔 트랜잭션이 끝날 때까지 보류된 후 실행
+|PROPAGATION_REQUIRED|트랜잭션이 있으면 그 상황에서 실행, 없으면 새로운 트랜 잭션 실행(기본값)
+|PROPAGATION_REQUIRED_NEW|대상은 자신만의 고유한 트랜잭션으로 실행
+|PROPAGATION_SUPPORTS|트랜잭션을 필요로 하지 않으나, 트랜잭션 상황하에 있다면 포함되어 실행
+
+- #### 격리 레벨
+
+|레벨|설명
+|--|--
+|DEFAULT|DB 설정, 기본 격리 수준(기본 설정)
+|SERIALIZABLE| 가장 높은 격리, 성능 저하의 우려가 있음
+|READ_UNCOMMITED|커밋되지 않는 데이터에 대한 읽기를 허용
+|READ_COMMITED| 커밋된 데이터에 대해 읽기 허용
+|REPEATEABLE_READ|동일 필드에 대해 다중 접근 시 모두 동일한 결과 봐장
+
+- Read-only 속성
+    - true인 경우 insert, update, delete 실행 시 예외 발생, 기본 설정은 false
+
+- Rollback-for-에외
+    - 즉정 예외가 발생 시 강제로 Rollback
+
+- No_rollback-for-예외
+    - 특정 예외의 발생 시에는 Rollback 처리되지 않음
+
+#### 19.2.2 @Transactional 적용 순서
+ - 위와 같은 설정 외에도 '클래스'나 '인터페이스'에 선언하는 것 역시 가능하다.
+ - 어노테이션의 우선순위는 다음과 같다
+    - **1순위** : 메서드의 @Transactional
+    - **2순위** : 클래스의 @Transactional
+    - **3순위** : 인터페이스의 @Transactional
+ - 위의 우선순위를 통해 인터페이스에는 가장 기준이 되는 @Transactional을 설정하고, 클래스나 메서드에 필요한 어노테이션을 처리하는 것이 좋다.
+
+ ## **Chapter 20** 댓글과 댓글 수에 대한 처리
