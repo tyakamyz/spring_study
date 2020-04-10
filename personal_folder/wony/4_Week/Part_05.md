@@ -374,3 +374,30 @@ private void publicTarget() {
  - 위의 우선순위를 통해 인터페이스에는 가장 기준이 되는 @Transactional을 설정하고, 클래스나 메서드에 필요한 어노테이션을 처리하는 것이 좋다.
 
  ## **Chapter 20** 댓글과 댓글 수에 대한 처리
+
+ ### 20.1 등록/삭제시 개수 가감
+- 등록
+```java
+@Transactional
+public int register(ReplyVO vo) {
+    // TODO Auto-generated method stub
+    log.info("register....." + vo);
+    
+    boardMapper.updateReplCnt(vo.getBno(), 1);
+    
+    return mapper.insert(vo);
+}
+```
+- 삭제
+```java
+@Transactional
+public int remove(Long rno) {
+    log.info("remove....." + rno);
+    // TODO Auto-generated method stub
+    ReplyVO vo = mapper.read(rno);
+    
+    boardMapper.updateReplCnt(vo.getBno(), -1);
+    
+    return mapper.delete(rno);
+}
+```
