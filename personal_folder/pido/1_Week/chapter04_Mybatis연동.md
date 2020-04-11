@@ -1,180 +1,174 @@
 
-[Part1] - chapter 04
+[Part5] - chapter 19
 =========================
 
-MyBaties 
-----
-- SQL 매핑 프레임워크 
-- 자동으로 Connection close() 기능
-- MyBaties 내부적으로 PreparedStatement 처리
-- #{prop} 와 같이 속성을 지정하면 내부적으로 자동 처리
-- 리턴타입을 지정하는 경우 자동으로 객체 생성 및 ResultSet 처리
+스프링의 트랜잭션 관리
+-----------------
+* 트랜잭션(Transaction)   
+'한번에 이루어지는 작업의 단위'
 
-#### pom.xml 추가 
->       <dependency>
->		    <groupId>org.mybatis</groupId>
->		    <artifactId>mybatis</artifactId>
->		    <version>3.4.6</version>
->		</dependency>
->				
->		<dependency>
->		    <groupId>org.mybatis</groupId>
->		    <artifactId>mybatis-spring</artifactId>
->		    <version>1.3.2</version>
->		</dependency>
->		
->		<dependency>
->		    <groupId>org.springframework</groupId>
->		    <artifactId>spring-tx</artifactId>
->		    <version>${org.springframework-version}</version>
->		</dependency>
->		
->		<dependency>
->		    <groupId>org.springframework</groupId>
->		    <artifactId>spring-jdbc</artifactId>
->		    <version>${org.springframework-version}</version>
->		</dependency>
+* 트랜잭션 성격
+    #### ACID 원칙
+    |용어                       | 의미	 
+    |---------------------------|----------------------
+    |원자성(Atomicity)          |하나의 트랜잭션은 하나의 단위로 처리되어야한다.어떤 작업이 잘못되는 경우 모든것은 다시 원점으로 돌아가야한다.
+    |일관성(Consistency)	    |트랜잭션이 성공했다면 데이터베이스의 모든 데이터는 일관성을 유지해야한다.
+    |격리(Isolation)	        |트랜잭션으로 처리되는 중간에 외부에서의 간섭은 없어야한다.
+    |영속성(Durability)	        |트랜잭션이 성공적으로 처리되면, 결과는 영속적으로 보관되어야한다. 
 
-*spring-jdbc/spring-tx : 데이터베이스 처리와 트랜잭션 처리*   
-*mybatis/mybatis-spring : 스프링과 Mybatis 연동 라이브러리* 
+* '트랜잭션으로 관리한다', '트랜잭션으로 묶는다' → 'AND' 연산과 비슷하다.
 
-#### 1. SQLSessionFactory
-* 내부적으로 SQLSession 을 생성해내는 존재   
-Connection을 생성하거나 원하는 SQL을 전달, 결과를 리턴받는 구조
+* **정규화**(중복된 데이터를 제거 해서 데이터 저장의 효율을 올린다. (테이블 증가, 각 테이블의 데이터 양 감소))가 진행될 수록 '트랜잭션처리' 대상에서 멀어진다. 그러나 조인이나 서브쿼리를 이용하여 처리해야하는 작업의 경우, 성능이슈로 **'반정규화'** 를 하게 된다.(ex. 게시물의 댓글, tbl_reply 테이블에 insert하고 tbl_board 테이블에 update) 이때 , 하나의 트랜잭션으로 관리되어야 하는 작업이다. 
 
-**[스프링 SQLSessionFactory 등록 작업]** 
+<hr />
 
-**- XML 기반 설정 -**  
-root-context.xml 
+트랜잭션 실습
+---------------
+1-1. pom.xml 추가
+```xml
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-tx</artifactId>
+    <version>${org.springframework-version}</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-jdbc</artifactId>
+    <version>${org.springframework-version}</version>
+</dependency>
+
+<dependency>
+    <groupId>com.zaxxer</groupId>
+    <artifactId>HikariCP</artifactId>
+    <version>2.7.8</version>
+</dependency>
+
+<dependency>
+    <groupId>org.mybatis</groupId>
+    <artifactId>mybatis</artifactId>
+    <version>3.4.6</version>
+</dependency>
+<dependency>
+    <groupId>org.mybatis</groupId>
+    <artifactId>mybatis-spring</artifactId>
+    <version>1.3.2</version>
+</dependency>
+
+<dependency>
+    <groupId>org.bgee.log4jdbc-log4j2</groupId>
+    <artifactId>log4jdbc-log4j2-jdbc4</artifactId>
+    <version>1.16</version>
+</dependency>
 ```
-<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
-		<property name="dataSource" ref="dataSource"></property>
+1-2. root-context.xml 추가
+```xml
+<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
+    <property name="driverClassName"  value="net.sf.log4jdbc.sql.jdbcapi.DriverSpy"></property>
+    <property name="jdbcUrl"  value="jdbc:log4jdbc:oracle:thin:@localhost:1521:XE"></property>
+    <property name="username"  value="book_ex"></property>
+    <property name="password"  value="book_ex"></property>
 </bean>
+
+<!-- HikariCP configuration -->
+<bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+    <constructor-arg ref="hikariConfig" />
+</bean>
+
+<!-- Mybatis-spring Connection -->
+<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+    <property name="dataSource" ref="dataSource"></property>
+</bean>
+
+<!-- Transaction -->
+<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <property name="dataSource" ref="dataSource"></property>
+</bean>
+
+<tx:annotation-driven />
 ```
 
-**- JAVA 기반 설정 -**
-RootConfig.java
+```<bean>```으로 등록된 transactionManager와 ```<tx:annotation-driven>``` 설정이 추가 된 후에는 트랜잭션이 필요한 상황을 만들어 어노테이션을 추가하는 방식으로 설정한다. 
+
+<br>
+
+**java 설정 시**   
+> ```java
+> @Configuration
+> @ComponentScan(basePackages= {"org.zerock.service"})
+> @ComponentScan(basePackages="org.zerock.aop")
+> @EnableAspectJAutoProxy
+> @EnableTransactionManagement
+> @MapperScan(basePackages = {"org.zerock.mapper"})
+> public class RootConfig {
+>     ...
+>     @Bean
+> 	public DataSourceTransactionManager txManager() {
+> 		return new DataSourceTransactionManager(dataSource());
+> 	}
+> }    
+> ```
+
+* TransactionManager를 @Bean 으로 설정하는 작업과 'aspectj-autoproxy' 설정을 추가해서 처리한다. 
+* @EnableTransactionManagement 설정은 'aspectj-autoproxy'에 대한 설정이고 txManager()는 ```<bean>``` 설정을 대신하게 된다.
+
+
+1-3. 트랜잭션 실행   
+
+SampleTxServiceImpl.java
 ```java
-@Bean
-public SqlSessionFactory sqlSessionFactory() throws Exception {
-	SqlSessionFactoryBean sqlSessionFactory = new SqlSessionFactoryBean();
-	sqlSessionFactory.setDataSource(dataSource());
-	return (SqlSessionFactory) sqlSessionFactory.getObject();
-}
-```
-
-#### 2. Mybatis + 스프링 연동
-* MyBatis의 Mapper   
-SQL 을 어떻게 처리할 것인지 별도의 설정을 분리해주고, 자동으로 처리되는 방식. SQL과 그에 대한 처리를 지정하는 역할.
-
-**[Mapper 설정 작업]**    
-Mybatis 가 동작할 때 Mapper를 인식할 수 있도록 설정하는 작업
-
-**- XML 기반 설정 -**  
-root-context.xml 파일 아래 Namespaces 항목에서 **mybatis-spring** 탭 선택
-root-context.xml Source 항목에 추가
-```
-<mybatis-spring:scan base-package="org.zerock.mapper"/>	
-```
-
-**- JAVA 기반 설정 -**  
-RootConfig.java
-```
-@MapperScan(basePackages = {"org.zerock.mapper"})
-public class RootConfig {
-```
-
-**[Mapper 매퍼 사용]**    
-1. 어노테이션 방식
-```
-public interface TimeMapper {
-
-	@Select("SELECT sysdate FROM dual")
-	public String getTime();
-	
-	// XML Mapper 처리
-	public String getTime2();
-}
-```
-
-2. XML 방식
-```
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="org.zerock.mapper.TimeMapper">
-
-	<select id="getTime2" resultType="string">
-		SELECT sysdate FROM dual
-	</select>
-</mapper>
-```
-
-> * XML 파일 생성 시 Mapper인터페이스의 구조와 같게 설정하는 것이 가독성을 높여준다. 
-> * ```<mapper>``` 태그의 namespace 속성값은 Mapper인터페이스와 XML을 인터페이스의 이름과 namespace 속성값을 가지고 판단한다. 메서드 선언은 동일한 "org.zerock.mapper.TimeMapper"의 인터페이스에 존재하고 SQL 에 대한 처리는 XML을 이용하는 방식.
-> * ```<select>``` 태그의 id속성의 값은 메서드 이름과 동일해야한다. 
-> * resultType 속성의 경우 인터페이스에 선언된 메서드의 리턴타입과 동일해야한다. 
-> * XML 매퍼에서 이용하는 태그에 대한 설정 필요   
-    [참고]http://www.mybatis.org/mybatis-3/ko/sqlmap-xml.html
-
+@Transactional
+@Override
+public void addData(String value) {
     
-log4jdbc-log4j 
---------------------
-정확한 파라미터의 확인을 위한 라이브러리 사용
-
-#### 1. pom.xml 추가 
->      <dependency>
->        <groupId>org.bgee.log4jdbc-log4j2</groupId>
->       <artifactId>log4jdbc-log4j2-jdbc4</artifactId>
->        <version>1.16</version>
->     </dependency>
-
-#### 2. 로그 설정 파일을 추가
-* src/main/resources 밑에 log4jdbc.log4j2.properties 파일 생성 후 하단 내용추가
-    >log4jdbc.spylogdelegator.name=net.sf.log4jdbc.log.slf4j.Slf4jSpyLogDelegator
-
-#### 3. log4jdbc 이용을 위해 JDBC드라이버와 URL정보 수정
-**- XML 기반 설정 -**  
-root-context.xml 
+    log.info("mapper1..........................");
+    mapper1.insertCol1(value);
+    
+    log.info("mapper2..........................");
+    mapper2.insertCol2(value);
+    
+    log.info("end..............................");
+}
 ```
-<!-- Root Context: defines shared resources visible to all other web components -->
-	<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
-		<property name="driverClassName"  value="net.sf.log4jdbc.sql.jdbcapi.DriverSpy"></property>
-		<property name="jdbcUrl"  value="jdbc:log4jdbc:oracle:thin:@localhost:1521:XE"></property>
-		<property name="username"  value="book_ex"></property>
-		<property name="password"  value="book_ex"></property>
-	</bean>
-	
-	<!-- HikariCP configuration -->
-	<bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
-		<constructor-arg ref="hikariConfig" />
-	</bean>
-```
+* 위와 같이 사용할 메서드 위에 ```@Transactional``` 어노테이션을 추가해주면 된다. 
 
-**- JAVA 기반 설정 -**
-RootConfig.java
-```
-/**
-	 @Configuration
-    @ComponentScan(basePackages= {"org.zerock.sample"})	
-    @MapperScan(basePackages = {"org.zerock.mapper"})
-    public class RootConfig {
-	
-	@Bean
-	public DataSource dataSource() {
-		HikariConfig hikariConfig = new HikariConfig();
-		hikariConfig.setDriverClassName("net.sf.log4jdbc.sql.jdbcapi.DriverSpy");
-        hikariConfig.setJdbcUrl("jdbc:log4jdbc:oracle:thin:@localhost:1521:XE");
-		hikariConfig.setUsername("book_ex");
-		hikariConfig.setPassword("book_ex");
-		
-		HikariDataSource dataSource = new HikariDataSource(hikariConfig);
-		
-		return dataSource;
-	}
-```
+#### 트랜잭션 어노테이션 속성들
 
+1. 전파(Propagation)속성   
 
-#### 4. 로그 레벨 설정 
-log4j.xml 파일의 설정 변경   
-[참고] https://logging.apache.org/log4j/2.x/manual/customloglevels.html
+    |용어                   | 의미	 
+    |-----------------------|----------------------
+    |PROPAGATION_MADATORY   | 작업은 반드시 특정한 트랜잭션이 존재한 상태에서만 가능 
+    |PROPAGATION_NESTED     | 기존에 트랜잭션이 있는 경우, 포함되어서 실행
+    |PROPAGATION_NEVER	    | 트랜잭션 상황하에 실행되면 예외발생
+    |PROPAGATION_NOT_SUPPORTED | 트랜잭션이 있는 경우 트랜잭션이 끝날때까지 보류된 후 실행
+    |PROPAGATION_REQUIRED   | 트랜잭션이 있으면 그 상황에서 실행, 없으면 새로운 트랜잭션 실행(기본설정)
+    |PROPAGATION_REQUIRED_NEW | 대상은 자신만의 고유한 트랜잭션으로 실행
+    |PROPAGATION_SUPPORTS   | 트랜잭션을 필요로 하지 않으나, 트랜잭션 상황하에 있다면 포함되어서 실행
+
+2. 격리(Isolation)레벨
+
+    |용어                  | 의미	 
+    |----------------------|----------------------
+    |DEFAULT               | DB설정, 기본 격리수준(기본 설정)
+    |SERIALIZABLE          | 가장 높은 격리(성능저하 우려가 있음)
+    |READ_UNCOMMITED       | 커밋되지 않은 데이터에 대한 읽기 허용
+    |READ_COMMITED         | 커밋된 데이터에 대해 읽기 허용
+    |REPEATEABLE_READ      | 동일 필드에 대해 다중 접근 시 모두 동일한 결과를 보장
+
+3. Read-only 속성
+    * true 인 경우, insert, update, delete 실행 시 예외 발생, 기본 설정 false
+
+4. Rollback-for-예외
+    * 특정 예외가 발생 시 강제로 Rollback
+
+5. No-rollback-for-예외
+    * 특정 예외의 발생 시에는 Rollback 처리되지않음
+
+1-4. 트랜잭션의 우선순위(메서드 > 클래스 > 인터페이스) 
+* 메서드의 @Transactional
+* 클래스의 @Transactional
+* 인터페이스의 @Transactional
+
+→ **인터페이스**에는 가장 **기준**이되는 @Transactional 과 같은 설정을 지정하고, **클래스나 메서드**에 **필요한 어노테이션**을 처리하는 것이 좋다. 
+
 
