@@ -24,20 +24,20 @@
 # @RequiredArgsConstructor
 </details>
 <details markdown="1">
-<summary style="font-size:20px;"> @ </summary>
+<summary style="font-size:20px;"> @AfterThrowing </summary>
 
 # @NonNull
 </details>
 <details markdown="1">
-<summary style="font-size:20px;"> @ </summary>
+<summary style="font-size:20px;"> @Aspect </summary>
 
 </details>
 <details markdown="1">
-<summary style="font-size:20px;"> @ </summary>
+<summary style="font-size:20px;"> @EnableAspectJAutoProxy </summary>
 
 </details>
 <details markdown="1">
-<summary style="font-size:20px;"> @ </summary>
+<summary style="font-size:20px;"> @Pointcut </summary>
 
 </details>
 <details markdown="1">

@@ -1,6 +1,6 @@
 # 중간 정리
 
-## Part_01 - Chapter_02
+## **Part_01** - Chapter_02
 
 + ### 1. 스프링의 주요 특징
 	- POJO 기반의 구성
@@ -17,7 +17,7 @@
  	- 해당 패키지에 있는 클래스들 중 Spring이 사용하는 @Component라는 어노테이션이 존재하는 클래스의 인스턴스를 생성
  	- Restaurant 객체는 Chef 객체가 필요하다는 어노테이션 설정이 있으므로 , Spring은 Chef 객체의 레퍼런스를 Restaurnat 객체에 주입
 
-## Part_02 - Chapter_05
+## **Part_02** - Chapter_05
 
 -  ### 1. 예제에서 사용 하는 구조  
 
@@ -78,7 +78,7 @@
 - org.springframework.web.servlet.DispatcherServlet 클래스는 스프링 MVC의 구조에서 가장 핵심적인 역할을 하는 클래스이다. 내부적으로 웹 관련 처리의 준비작업을 진행하는데 이 때 사용하는 파일이 servlet-context.xml이다.
 - DispatcherServlet에서 XmlWebApplicationContext를 이용해서 servlet-context.xml을 로딩하고 해석하기 시작한다. 이 과정에서 동륵된 객체(Bean)들은 기존에 만들어진 객체(Bean)들과 같이 연동되게 된다.
 
-## Part_02 - Chapter_06
+## **Part_02** - Chapter_06
 
 - ### 1. Controller의 리턴 타입
 
@@ -90,3 +90,103 @@
   |ResponseEntity|response 할 때 Http 헤더 정보와 내용을 가공하는 용도로  사용
   |Model, ModelAndView| Model로 데이터를 반환하거나 화면까지 같이 지정하는 경우에 사용<br/>(최근에는 많이 사용하지않는다.)
   |HttpHeaders|응답에 내용 없이 Http 헤더 메시지만 전달하는 용도로 사용
+
+## **Part 03** - Chapter 07
+
+ - ### 1. 일반적으로 웹 프로젝트는 3-Tier(티어) 방식으로 구성
+    - Presentation Tier(화면 계층)
+    - Business Tier(비즈니스 계층)
+    - Persistence Tier(영속 계층 혹은 데이터 계층)
+
+- Presentation Tier(화면계층)
+    - 화면에 보여주는 기술을 사용하는 영역. Servlet/JSP나 스프링 MVC가 담당하는 영역
+    - 프로젝트 성격에 맞춰 앱이나 CS(Client-Server)로 구성되는 경우가 있다.
+    - 이전 파트에서 학습한 스프링 MVC와 JSP를 이용한 화면구성이 이에 속한다.
+    
+- Business Tier(비즈니스 계층)
+    - 순수한 비즈니스 로직을 담고있는 영역
+    - 고객이 원하는 요구 사항을 반영하는 계층으로 **중요한 영역** 이다
+    - 주로 'xxxService'와 같은 이름으로 구성, 메스드의 이름 역시 고객들이 사용하는 용어를 그대로 사용
+- Persistence Tier(영속 계층 혹은 데이터 계층)
+    - 데이터를 어떤 방식으로 보관하고, 사용하는가에 대한 설계가 들어가는 계층
+    - 일반적인 경우 데이터베이스를 많이 사용하지만, 경우에 따라 네트워크 호출이나 원격 호출등의 기술이 접목
+    - 해당 영역은 MyBatis와 mybatis-spring을 이용해서 구성했던 파트 1을 이용
+
+## **Part 04** - Chapter 16
+
+ - ### 1. 다양한 전송방식
+
+ |작업|전송방식|URI
+|---|----|-----
+|등록|POST|/members/new
+|조회|GET|/members/{id}
+|수정|PUT/PATCH|/member/{id} + body (json 데이터 등)
+|삭제|DELETE|/member/{id}
+
+## **Part 05** - Chapter 18
+
+ - ### 1. 용어
+ |구분|설명
+ |---|---
+|Proxy|**대리인**, 함수 호출자는 주요업무가아닌 보조업무를 프록시에게 맡기고, 프록시 내부적으로 보조업무를 제어,처리
+|Target| **핵심 비즈니스 로직 객체**, 부가기능을 부여할 대상
+|Advice| **부가기능을 정의한 코드**, 타겟에 제공할 부가기능을 담고있는 모듈
+|JoinPoint| **Advice를 적용 가능한 지점**, Spring에서 관리하는 Bean들의 모든 메서드
+|pointcut| **관심사와 비즈니스 로직이 결합되는 지점을 결정하는 것**, JoinPoint의 부분집합으로도 표현
+|Aspect| **Advice + pointcut**, Advice의 추상화, AOP의 기본 모듈
+- ### 2. pointcut 시점
+|구분|어노테이션|설명|
+|--|--|--|
+|Before Advice|@Before| Target의 JoinPoint를 호출하기 전에 실행되는 코드이다.</br> 코드의 실행 자체에는 관여할 수 없다.
+|After Returning Advice |@AfterReturning| 모든 실행이 정상적으로 이루어진 후 에 동작하는 코드|
+|After Throwing Advice |@AfterThrowing| 예외가 발생한 뒤에 동작하는 코드|
+|After Advice |@After| 정상적으로 실행되거나 예외가 발생했을 때 구분 없이 실행되는 코드|
+|Around Advice|@Around| 메서드의 실행 자체를 제어할 수 있는 가장 강력한 코드</br>직접 대상메서드를 호출하고 결과나 예외를 처리할 수 있다.
+
+- ### 3. pointcut 선언형태
+ |구분|설명|사용예
+ |--|---|---
+ |execution(@execution)| '**메서드**'를 기준으로 Pointcut을 설정한다|execution([수식어] [리턴타입] [클래스이름] [이름](\[파라미터]\)
+ |within(@within)|특정한 '**타입(클래스)**'을 기준으로 Pointcut을 설정한다|
+ |this|주어진 '**인터페이스를 구현한 객체**'를 대상으로 Pointcut을 설정한다|
+ |arg(@args)|'**특정한 파라미터**'를 가지는 대상들만을 Pointcut으로 설정한다|
+ |@annotation|'**특정한 어노테이션**'이 적용된 대상들만을 Pointcut으로 설정한다.|
+
+ - #### 3.1 pointcut 선언 속성
+ |구분|설명
+|--|--
+|수식어|생략가능, public,protected 등
+|리턴타입|메서드의 리턴타입 지정
+|클래스이름, 이름| 클래스의 이름 및 메서드 이름 지정
+|파라미터 | 메서드 파라미터 지정
+|'*'| 모든 값
+|'..'| 0개 이상
+
+- ### 4.@Around와 ProceedingJoinPoint
+    - AOP 를 이용하여 좀더 구체적인 처리에 사용
+    - ProceedingJoinPoint 인터페이스의 메서드
+
+ |메서드|설명
+ |--|--
+ |Signature getSignature()|호출되는 메서드에 대한 정보
+ |Object getTarget() | 대상 객체(Target)
+ |Object[] getArgs() | 파라미터의 목록
+ |proceed()| 의존 함수 실행
+ |proceed(Object[])| 의존 함수 실행(매게변수는 의존 함수 파라미터와 같은 타입을 가져야한다)
+
+ - ProceedingJoinPoint.getSignature() 로 정의된 Signature 인터페이스는 호출되는 메서드와 관련된 정보를 제공하며 다음과 같은 메서드를 정의한다.
+
+ |메서드|설명
+ |--|--
+ |String getName | 메서드의 이름
+ |String toLongString()| 메서드를 완전하게 표현한 문장(메서드의 리턴 타입, 파라미터 타입이 모두 표시)
+ |String toShortString()|메서드의 축약 표현 문장(기본 구현은 메서드의 이름만을 구한다)
+
+## **Part 05** - Chapter 19
+
+ - ### 1. @Transactional 적용 순서
+
+    - **1순위** : 메서드의 @Transactional
+    - **2순위** : 클래스의 @Transactional
+    - **3순위** : 인터페이스의 @Transactional
+    - 위의 우선순위를 통해 인터페이스에는 가장 기준이 되는 @Transactional을 설정하고, 클래스나 메서드에 필요한 어노테이션을 처리하는 것이 좋다.

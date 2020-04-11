@@ -1,7 +1,17 @@
 <details markdown="1">
+<summary style="font-size:20px;"> @Getter </summary>
+
+# @Getter
+</details>
+<details markdown="1">
 <summary style="font-size:20px;"> @Setter </summary>
 
 # @Setter
+</details>
+<details markdown="1">
+<summary style="font-size:20px;"> @ToString </summary>
+
+# @ToString
 </details>
 <details markdown="1">
 <summary style="font-size:20px;"> @Data </summary>
@@ -29,7 +39,7 @@
 # @NonNull
 </details>
 <details markdown="1">
-<summary style="font-size:20px;"> @ </summary>
+<summary style="font-size:20px;"> @NoArgsConstructor </summary>
 
 </details>
 <details markdown="1">

@@ -150,6 +150,30 @@ public class CommonExceptionAdvice {
 
 </details>
 <details markdown="1">
+<summary style="font-size:20px;"> @WebAppConfiguration </summary>
+
+</details>
+<details markdown="1">
+<summary style="font-size:20px;"> @ComponentScan </summary>
+
+</details>
+<details markdown="1">
+<summary style="font-size:20px;"> @MapperScan </summary>
+
+</details>
+<details markdown="1">
+<summary style="font-size:20px;"> @Transactional </summary>
+
+</details>
+<details markdown="1">
+<summary style="font-size:20px;"> @Bean </summary>
+
+</details>
+<details markdown="1">
+<summary style="font-size:20px;"> @ </summary>
+
+</details>
+<details markdown="1">
 <summary style="font-size:20px;"> @ </summary>
 
 </details>
