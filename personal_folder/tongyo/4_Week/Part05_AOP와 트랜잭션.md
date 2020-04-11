@@ -251,3 +251,117 @@
 	 */
      ```
 -------------
+> ## ch19. 스프링에서 트랜잭션 관리
+- 트랜잭션
+    - 비즈니스에서 쪼개질 수 없는 하나의 단위 작업
+    - 사전적인 의미로는 '거래'
+    - IT에선 '한 번에 이루어지는 작업의 단위'
+- 트랙잭션의 성격 (ACID 원칙)
+
+    |명칭|설명|
+    |---|---|
+    |원자성|하나의 트랙잭션은 모두 하나의 단위로 처리되어야 함.<br> 어떤 트랙잭션이 A와 B 작업으로 구성되어 있을 경우,<br>A가 성공하고 B가 실패했다면 A,B 모두 원래 상태(원점)으로 되돌아가야 함|    
+    |일관성|트랜잭션이 성공했다면 데이터베이스의 모든 데이터는 일관성을 유지해야 함.<br>트랜잭션으로 처리된 데이터와 일반 데이터 사이에는 전혀 차이가 없어야 함|
+    |격리|트랜잭션으로 처리되는 중간에 외부에서의 간섭은 없어야 함|
+    |영속성|트랜잭션이 성공적으로 처리되면, 그 결과는 영속적으로 보관되어야 함|
+---------
+- Sample1Mapper.java
+```java
+package org.zerock.mapper;
+
+import org.apache.ibatis.annotations.Insert;
+
+public interface Sample1Mapper {
+	@Insert("insert into tbl_sample1 (col1) values (#{data})")
+	public int insertCol1(String data);
+}
+```
+- Sample2Mapper.java
+```java
+package org.zerock.mapper;
+
+import org.apache.ibatis.annotations.Insert;
+
+public interface Sample2Mapper {
+	@Insert("insert into tbl_sample2 (col2) values (#{data})")
+	public int insertCol2(String data);
+}
+```
+- SampleTxService.java
+```java
+package org.zerock.service;
+
+public interface SampleTxService {
+	public void addData(String value);
+}
+```
+- SampleTxServiceImpl.java
+```java
+package org.zerock.service;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.zerock.mapper.Sample1Mapper;
+import org.zerock.mapper.Sample2Mapper;
+import org.zerock.service.SampleTxService;
+
+import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j;
+
+@Service
+@Log4j
+@AllArgsConstructor
+public class SampleTxServiceImpl implements SampleTxService {
+	private Sample1Mapper mapper1;
+	
+	private Sample2Mapper mapper2;
+	
+	@Transactional
+	@Override
+	public void addData(String value) {
+		log.info("mapper1............");
+		mapper1.insertCol1(value);
+		
+		log.info("mapper2............");
+		mapper2.insertCol2(value);
+		
+		log.info("end....................");
+	}
+}
+```
+- SampleTxServiceTests.java
+```java
+package org.zerock.Service;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.zerock.service.SampleService;
+import org.zerock.service.SampleTxService;
+
+import lombok.Setter;
+import lombok.extern.log4j.Log4j;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@Log4j
+@ContextConfiguration({"file:src/main/webapp/WEB-INF/spring/root-context.xml"})
+// JAVA 설정의 경우
+// @ContextConfiguration(classes={RootConfig.class})
+public class SampleTxServiceTests {
+	@Setter(onMethod_=@Autowired)
+	private SampleTxService service;
+	
+	@Test
+	public void testLong() {
+		String str = "Starry\r\n" +
+				"Starry night\r\n" + 
+				"Paint your palette blue and grey\r\n" +
+				"Look out on a summer's day";
+		log.info(str.getBytes().length);
+		
+		service.addData(str);
+	}
+}
+```

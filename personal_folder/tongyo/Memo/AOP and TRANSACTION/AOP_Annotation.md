@@ -20,31 +20,40 @@
 -------------
 
 <details markdown="1">
-<summary></summary>
+<summary>@Component</summary>
+
+- ## @Component
+    - AOP와 직접적인 관계는 없지만 스프링에서 bean으로 인식하기 위해 사용
 </details>
 
 -------------
 
 <details markdown="1">
-<summary></summary>
+<summary>@Aspect</summary>
 </details>
 
 -------------
 
 <details markdown="1">
-<summary></summary>
+<summary>@Before</summary>
 </details>
 
 -------------
 
 <details markdown="1">
-<summary></summary>
+<summary>@AfterThrowing</summary>
 </details>
 
 -------------
 
 <details markdown="1">
-<summary></summary>
+<summary>@Around</summary>
+</details>
+
+-------------
+
+<details markdown="1">
+<summary>@ProceedingJoinPoint</summary>
 </details>
 
 -------------

@@ -1,4 +1,19 @@
+> xml 파일들 삭제
+- web.xml 삭제
+- root-context.xml 삭제
+- servlet-context.xml 삭제
 > pom.xml
+- \<plugins> 안에 내용 추가
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-war-plugin</artifactId>
+    <version>3.2.0</version>
+    <configuration>
+        <failOnMissingWebXml>false</failOnMissingWebXml>
+    </configuration>
+</plugin>
+```
 - 스프링 버전과 JAVA 버전 변경
 ```xml
 <properties>
@@ -177,58 +192,101 @@
 - ojdbc8.jar 파일 Build Path에 추가
 - ojdbc8.jar 파일 Deployment Assembly에 추가
 
-> root-context.xml
+> RootConfig.java
+- root-context.xml 대신 사용
+- src/main/java/......../RootConfig.java
+```java
+package org.zerock.config;
 
-<img width='70%' src='./img/root-context Namespaces.png'>
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ComponentScan;
 
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:context="http://www.springframework.org/schema/context"
-	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
-	xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
-		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
-		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+import javax.sql.DataSource;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
+@Configuration
+@ComponentScan(basePackages= {"org.zerock.service"})
+@ComponentScan(basePackages= {"org.zerock.aop"})
+@EnableAspectJAutoProxy
+
+@EnableTransactionManagement
+
+@MapperScan(basePackages={"org.zerock.mapper"})
+public class RootConfig {
+	@Bean
+    public DataSource dataSource() {
+    HikariConfig hikariConfig = new HikariConfig();
+
+    hikariConfig.setDriverClassName("oracle.jdbc.driver.OracleDriver");
+    hikariConfig.setJdbcUrl("jdbc:oracle:thin:@tongracle.cnsqtfo00xiq.ap-northeast-2.rds.amazonaws.com:1521:orcl");
+
+    hikariConfig.setUsername("book_ex");
+    hikariConfig.setPassword("book_ex");
+
+    HikariDataSource dataSource = new HikariDataSource(hikariConfig);
+
+    return dataSource;
+    }
+
+    @Bean
+    public sqlSessionFactory sqlSessionFactory() throws Exception{
+        SqlSessionFactoryBean sqlSessionFactory = new SqlSessionFactoryBean();
+        sqlSessionFactory.setDataSource(dataSource());
+        return (SqlSessionFactory) sqlSessionFactory.getObject();
+    }
+
+    @Bean
+    public DataSourceTransactionManager txManager(){
+        return new DataSourceTransactionManager(dataSource)());
+    }
+}
+```
+> WebConfig.java
+- web.xml 대신 사용
+- src/main/java/......../WebConfig.java (RootConfig.java와 동일한 위치)
+```java
+package org.zerock.config;
+
+import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
+
+public class WebConfig extends AbstractAnnotationConfigDispatcherServletInitializer {
+	@Override
+	protected Class<?>[] getRootConfigClasses(){
+		return new Class[] {RootConfig.class};
+	}
 	
-	<!-- Root Context: defines shared resources visible to all other web components -->
-	<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
-		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"></property>
-		<property name="jdbcUrl" value="jdbc:oracle:thin:@tongracle.cnsqtfo00xiq.ap-northeast-2.rds.amazonaws.com:1521:orcl"></property>
-		<property name="username" value="book_ex"></property>
-		<property name="password" value="book_ex"></property>
-	</bean> 
+	@Override
+	protected Class<?>[] getServletConfigClasses(){
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
-	<!-- HikariCP configuration -->
-	<bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
-		<constructor-arg ref="hikariConfig" />
-	</bean>
-	
-	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
-		<property name="dataSource" ref="dataSource"></property>
-	</bean>
-	
-	<mybatis-spring:scan base-package="org.zerock.mapper"/>
-		
-</beans>
+	@Override
+	protected String[] getServletMappings(){
+		// TODO Auto-generated method stub
+		return null;
+	}
+}
 ```
 > log4jdbc.log4j2.properties
 - src/main/resources/log4jdbc.log4j2.properties
 ```properties
 log4jdbc.spylogdelegator.name=net.sf.log4jdbc.log.slf4j.Slf4jSpyLogDelegator
 ```
-> root-context.xml
+> RootConfig.java
 - log4jdbc 사용할 수 있도록 변경
 - sql 결과가 보기좋게 표시됨
-```xml
-<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
-		<!-- <property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"></property> -->
-		<!-- <property name="jdbcUrl" value="jdbc:oracle:thin:@tongracle.cnsqtfo00xiq.ap-northeast-2.rds.amazonaws.com:1521:orcl"></property> -->
-		<property name="driverClassName" value="net.sf.log4jdbc.sql.jdbcapi.DriverSpy"></property>
-		<property name="jdbcUrl" value="jdbc:log4jdbc:oracle:thin:@tongracle.cnsqtfo00xiq.ap-northeast-2.rds.amazonaws.com:1521:orcl"></property>
-		<property name="username" value="book_ex"></property>
-		<property name="password" value="book_ex"></property>
-	</bean> 
+```java
+//  hikariConfig.setDriverClassName("oracle.jdbc.driver.OracleDriver");
+// 	    hikariConfig.setJdbcUrl("jdbc:oracle:thin:@tongracle.cnsqtfo00xiq.ap-northeast-2.rds.amazonaws.com:1521:orcl");
+hikariConfig.setDriverClassName("net.sf.log4jdbc.sql.jdbcapi.DriverSpy");
+	    hikariConfig.setJdbcUrl("jdbc:log4jdbc:oracle:thin:@tongracle.cnsqtfo00xiq.ap-northeast-2.rds.amazonaws.com:1521:orcl");
 ```
 > DataSourceTests.java
 - DataSource 테스트
@@ -247,16 +305,16 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.zerock.config.RootConfig;
 
 import lombok.Setter;
 import lombok.extern.log4j.Log4j;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration("file:src/main/webapp/WEB-INF/spring/root-context.xml")
-/*
- * JAVA 설정을 사용하는 경우
- * @ContextConfiguration(class = {RootConfig.class})
- */
+//@ContextConfiguration("file:src/main/webapp/WEB-INF/spring/root-context.xml")
+//JAVA 설정을 사용하는 경우
+@ContextConfiguration(classes = {RootConfig.class})
+ 
 @Log4j
 public class DataSourceTests {
 	@Setter(onMethod_= {@Autowired})
@@ -307,21 +365,16 @@ public class JDBCTests {
 	}
 }
 ```
-> web.xml
+> WebConfig.java
 - UTF-8 필터 설정
 - 데이터 전송 시 한글깨짐 방지
-```xml
-<filter>
-    <filter-name>encoding</filter-name>
-    <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
-    <init-param>
-        <param-name>encoding</param-name>
-        <param-value>UTF-8</param-value>
-    </init-param>
-</filter>
-
-<filter-mapping>
-    <filter-name>encoding</filter-name>
-    <servlet-name>appServlet</servlet-name>
-</filter-mapping>
+```java
+@Override
+protected Filter[] getServletFilters() {    //import javax.servlet.Filter;
+    CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
+    characterEncodingFilter.setEncoding("UTF-8");
+    characterEncodingFilter.setForceEncoding(true);
+    
+    return new Filter[] {characterEncodingFilter};
+}
 ```
