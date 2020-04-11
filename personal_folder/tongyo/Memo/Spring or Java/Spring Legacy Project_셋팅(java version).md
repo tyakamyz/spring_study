@@ -19,8 +19,8 @@
 <properties>
     <java-version>1.8</java-version>
     <org.springframework-version>5.0.7.RELEASE</org.springframework-version>
-    <org.aspectj-version>1.6.10</org.aspectj-version>
-    <org.slf4j-version>1.6.6</org.slf4j-version>
+    <org.aspectj-version>1.9.0</org.aspectj-version>
+    <org.slf4j-version>1.7.25</org.slf4j-version>
 </properties>
 ```
 - 스프링 관련 라이브러리 추가
@@ -156,6 +156,20 @@
     <version>3.1.0</version>
     <scope>provided</scope>
 </dependency>
+```
+- AOP 사용을 위해 AspectJ Weaver 라이브러리 추가
+```xml
+<!-- AspectJ -->
+<dependency>
+    <groupId>org.aspectj</groupId>
+    <artifactId>aspectjrt</artifactId>
+    <version>${org.aspectj-version}</version>
+</dependency>	
+<dependency>
+    <groupId>org.aspectj</groupId>
+    <artifactId>aspectjweaver</artifactId>
+    <version>${org.aspectj-version}</version>
+</dependency>	
 ```
 - Servlet3.1(3.0)을 사용하고, JDK1.8의 기능을 활용하기 위해 버전 변경
 ```xml
