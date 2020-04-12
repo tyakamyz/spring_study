@@ -24,6 +24,30 @@ public void addData(String value) {
 
 ## ◈ 트랜잭션 어노테이션 속성들
 
+|속성                   | 설명	 
+|-----------------------|----------------------
+|propagation            |트랜잭션 개시할지 등 전파행위에 관한 속성. 
+|isolation              |트랜잭션 격리레벨에 관한 속성으로 기본값은 Default레벨이며 실제 사용하는 데이터베이스(JDBC) 등의 기본값을 따릅니다. 
+|readOnly               |트랜잭션을 읽기전용으로 지정하는 속성. 최적화 관점에서 지원되는 프로터티이므로 현재 트랜잭션 상태에따라 다르게 동작할 수 있습니다. 
+|timeout                |트랜잭션의 타임아웃(초단위)을 지정하는 속성으로 지정하지 않을 경우 사용하는 트랜잭션 시스템의 타임아웃을 따릅니다. 
+|rollbackFor           |Checked 예외 발생시에 롤백을 수행할 예외를 지정하는 속성.   
+|rollbackForClassName   |rollbackFor와 동일하지만 문자열로 클래스명을 지정하는 속성.    
+|noRollbackFor          |Spring의 트랜잭션은 기본적으로 Runtime예외만 롤백처리를 수행하지만 Runtime예외중 특정 예외는 롤백을 수행하지 않아야 할 경우 사용하는 속성.   
+|noRollbackForClassName |noRollbackFor와 동일하지만 문자열로 클래스명을 지정하는 속성.
+
+```java
+@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class) 
+public class SomeService { 
+    
+    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.DEFAULT, timeout = 10) 
+    public void operateSome() {
+
+    } 
+    ... 
+}
+```
+##### 출처: https://reiphiel.tistory.com/entry/understanding-of-spring-transaction-management-practice 
+
 1. 전파(Propagation)속성   
 
     |용어                   | 의미	 
@@ -36,14 +60,7 @@ public void addData(String value) {
     |PROPAGATION_REQUIRED_NEW | 대상은 자신만의 고유한 트랜잭션으로 실행
     |PROPAGATION_SUPPORTS   | 트랜잭션을 필요로 하지 않으나, 트랜잭션 상황하에 있다면 포함되어서 실행
 
-    ```java
-    @Transactional(propagation = Propagation.NEVER)
-    public void transactionService() {
-        ...
-    }    
-    ```
-
-    참고예제 : http://wonwoo.ml/index.php/post/966
+    ##### 참고예제 : http://wonwoo.ml/index.php/post/966
 
 2. 격리(Isolation)레벨
 
