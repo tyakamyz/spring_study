@@ -41,7 +41,7 @@
 |PROPAGATION_REQUIRED_NEW|대상은 자신만의 고유한 트랜잭션으로 실행|
 |PROPAGATION_SUPPORTS|트랜잭션을 필요로 하지 않으나, 트랜잭션 상황하에 있다면 포함되어서 실행|
 
-> 격리(lsolation)레벨
+> 격리(Isolation)레벨
 
 |속성명|설명|
 |---|---|
