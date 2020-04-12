@@ -6,6 +6,7 @@
  1. [@Component](#Component)
  1. [@Bean](#Bean)
  1. [@RequestParam](#RequestParam)
+ 1. [@InitBinder](#InitBinder)
  1. [@DateTimeFormat](#DateTimeFormat)
  1. [@ExceptionHandler](#ExceptionHandler)
  1. [@ResponseStatus](#ResponseStatus)
