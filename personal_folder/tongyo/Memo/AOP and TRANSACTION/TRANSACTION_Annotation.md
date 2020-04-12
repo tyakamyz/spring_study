@@ -1,4 +1,4 @@
-># Transactional의 @Annotation 
+# Transactional의 @Annotation 
 
 <details markdown="1">
 <summary>@Transactional</summary>

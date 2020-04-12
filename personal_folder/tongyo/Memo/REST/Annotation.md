@@ -1,4 +1,4 @@
-># REST의 @Annotation 
+# REST의 @Annotation 
 
 <details markdown="1">
 <summary>전송방식에 따른 Annotation</summary>

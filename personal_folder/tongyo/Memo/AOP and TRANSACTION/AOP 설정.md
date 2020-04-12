@@ -1,4 +1,4 @@
-> # AOP 설정
+# AOP 설정
 
 > pom.xml 설정
 - Spring Legacy Project_셋팅 문서 참조

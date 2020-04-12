@@ -1,4 +1,4 @@
-> # TRANSACTION 설정(AOP 포함)
+# TRANSACTION 설정(AOP 포함)
 
 > pom.xml 설정
 - Spring Legacy Project_셋팅 문서 참조

@@ -1,3 +1,4 @@
+# Spring Legacy Project_셋팅(java version)
 > xml 파일들 삭제
 - web.xml 삭제
 - root-context.xml 삭제

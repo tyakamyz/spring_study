@@ -1,3 +1,4 @@
+# Spring Legacy Project_셋팅(xml version)
 > pom.xml
 - 스프링 버전과 JAVA 버전 변경
 ```xml

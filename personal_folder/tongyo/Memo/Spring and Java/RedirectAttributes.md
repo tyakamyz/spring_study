@@ -1,4 +1,4 @@
-> ## RedirectAttributes 객체
+# RedirectAttributes 객체
 - 일회성으로만 데이터를 전달
 - addFlashAttribute()로 보관된 데이터는 단 한 번만 사용할 수 있게 보관됨
 - 내부적으로는 HttpSession을 통해 처리

@@ -1,4 +1,4 @@
-> # @RestController 반환타입
+# @RestController 반환타입
 - JSP와 달리 순수한 데이터를 반환하는 형태이므로 다양한 포맷의 데이터 전송 가능
     - 주로 많이 사용 형태 : 일반문자열, JSON, XML 등
     - produces는 MIME TYPE을 의미

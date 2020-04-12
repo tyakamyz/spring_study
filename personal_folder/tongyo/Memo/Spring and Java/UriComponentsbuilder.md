@@ -1,4 +1,4 @@
-> ## UriComponentsBuilder를 이용하는 링크 생성
+# UriComponentsBuilder를 이용하는 링크 생성
 - 여러개의 파라미터들을 연결해서 uri의 형태로 만들어 주는 기능
     > Criteria.java
     ```java
