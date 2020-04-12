@@ -170,7 +170,7 @@ public class CommonExceptionAdvice {
 
 </details>
 <details markdown="1">
-<summary style="font-size:20px;"> @ </summary>
+<summary style="font-size:20px;"> @param </summary>
 
 </details>
 <details markdown="1">
