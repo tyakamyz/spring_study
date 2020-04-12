@@ -365,3 +365,84 @@ public class SampleTxServiceTests {
 	}
 }
 ```
+-------
+> ## ch20. 댓글과 댓글 수에 대한 처리
+- BoardVO.java
+```java
+private int replyCnt;
+```
+- BoardMapper.java
+```java
+public void updateReplyCnt(@Param("bno") Long bno, @Param("amount") int amount);
+```
+- BoardMapper.xml
+```xml
+<update id="updateReplyCnt">
+    update tbl_board set replycnt = replycnt + #{amount} where bno = #{bno}
+</update>
+```
+- BoardMapper.xml
+    - List에 relycnt 추가
+```xml
+<select id="getListWithPaging" resultType="org.zerock.domain.BoardVO">
+    <![CDATA[
+    select bno, title, content, writer, regdate, updatedate, replycnt
+    from
+    (
+        select /*+INDEX_DESC(tbl_board, pk_board) */ 
+                rownum rn, bno, title, content, writer, regdate, updatedate, replycnt
+        from tbl_board
+        where
+    ]]>
+    
+        <include refid="criteria"></include>
+        
+    <![CDATA[
+        rownum <= #{pageNum} * #{amount}
+    )
+    where rn > (#{pageNum}-1) * #{amount}
+    ]]>
+</select>
+```
+- ReplyServiceImpl.java
+    - 댓글 수 증감, @Transactional 어노테이션 추가
+```java
+@Transactional
+@Override
+public int register(ReplyVO vo) {
+    log.info("register......" + vo);
+    
+    boardMapper.updateReplyCnt(vo.getBno(), 1);
+    
+    return mapper.insert(vo);
+}
+
+@Transactional
+public int remove(Long rno) {
+    log.info("remove......" + rno);
+    
+    ReplyVO vo = mapper.read(rno);
+    
+    boardMapper.updateReplyCnt(vo.getBno(), -1);
+    return mapper.delete(rno);
+}
+```
+- list.jsp
+    - 화면 처리
+```jsp
+<tbody>
+    <c:forEach items="${list}" var="board">
+    <tr>
+        <td><c:out value="${board.bno}" /></td>
+        <td>
+            <a class="move" href="<c:out value='${board.bno}' />"><c:out value="${board.title}" /> 
+                    <b> [ <c:out value="${board.replyCnt}" /> ]</b>
+            </a>
+        </td>
+        <td><c:out value="${board.writer}" /></td>
+        <td><fmt:formatDate pattern="yyyy-MM-dd" value="${board.regdate}" /></td>
+        <td><fmt:formatDate pattern="yyyy-MM-dd" value="${board.updateDate}" /></td>
+    </tr>
+    </c:forEach>
+</tbody>
+```
