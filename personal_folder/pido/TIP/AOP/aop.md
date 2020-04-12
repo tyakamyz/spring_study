@@ -16,9 +16,9 @@ AOP
 <img src="https://user-images.githubusercontent.com/22673024/79060763-00f96500-7cc4-11ea-9c76-5332267ebe63.png" width="60%">
 
 → AOP에서 **공통 모듈들을 모듈화하는 것**이 Aspect   
-→ 어느 부분( Where )에 횡단 관심 모듈을 삽입 할 것인지 정의한 것이 Pointcut   
-→ 언제( When ) 횡단 관심 모듈을 삽입할지를 정의한 것이 Joinpoint    
-→ 핵심 관심 모듈에 삽입 될 횡단 관심 모듈 자체( What )를 의미하는 것이 Advice
+→ **어느 부분( Where )에** 횡단 관심 모듈을 삽입 할 것인지 정의한 것이 Pointcut   
+→ **언제( When )** 횡단 관심 모듈을 삽입할지를 정의한 것이 Joinpoint    
+→ 핵심 관심 모듈에 **삽입 될 횡단 관심 모듈 자체( What )**를 의미하는 것이 Advice
 
 <hr>
 
@@ -86,14 +86,13 @@ public class LogAdvice {
 
 ## ◈ Proxy 
 
-AOP에는 여러가지 방식이 있는데, <aop:aspectj-autoproxy /> 이 방식은 proxy를 두는 방식입니다.
+AOP에는 여러가지 방식이 있는데, <aop:aspectj-autoproxy /> 이 방식은 proxy를 두는 방식이다.  
+proxy란 어떤 핵심 기능을 수행 하기 전과 후에 공통 기능을 수행한다고 할 때,    
+aspect가 곧바로 핵심 기능에서 실행되는 것이 아니라,   
+proxy(대행자)에서 공통 기능이 수행하도록 하는 것이다.   
 
-proxy란 어떤 핵심 기능을 수행 하기 전과 후에 공통 기능을 수행한다고 할 때, aspect가 곧바로 핵심 기능에서 실행되는 것이 아니라,   
-proxy(대행자)에서 공통 기능이 수행하도록 하는 것입니다.
+즉 proxy는 핵심 기능을 하는 메서드에서 핵심 기능을 수행하고 다시 돌아와서 공통 기능을 수행하는 로직을 거치게 된다.
 
-즉 proxy는 핵심 기능을 하는 메서드에서 핵심 기능을 수행하고 다시 돌아와서 공통 기능을 수행하는 로직을 거치게 됩니다.
-
-
-개발을 하면서 어디에 횡단 관심 모듈을 삽입할 지 알 수 없으므로 spring-servlet.xml 파일에도 <aop:aspectj-autoproxy /> 를 추가하는 것이 좋습니다.
+개발을 하면서 어디에 횡단 관심 모듈을 삽입할 지 알 수 없으므로 <aop:aspectj-autoproxy /> 를 추가하는 것이 좋습니다.
 
 참고 사이트 : https://victorydntmd.tistory.com/178
