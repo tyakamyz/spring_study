@@ -1,5 +1,5 @@
-## 트랜잭션 사용 방법
-
+트랜잭션 사용 방법
+=======================================
 ### root-context.xml
 
 <img src="https://user-images.githubusercontent.com/22673024/79064729-76762d00-7ce6-11ea-84bf-f85a6b377796.png" width="50%">
