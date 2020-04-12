@@ -1,34 +1,29 @@
-<details markdown="1">
-<summary style="font-size:20px;"> @RunWith </summary>
+# Annotation
 
-# @RunWith
+ 1. [@RunWith](#RunWith)
+ 1. [@ContextConfiguration](#ContextConfiguration)
+ 1. [@Test](#Test)
+ 1. [@WebAppConfiguration](#WebAppConfiguration)
 
-</details>
+# Explanation
 
-<details markdown="1">
-<summary style="font-size:20px;"> @ContextConfiguration </summary>
+## @RunWith
 
-# @ContextConfiguration
-</details>
+**[⬆ go to top](#Annotation)**
 
-<details markdown="1">
-<summary style="font-size:20px;"> @Test </summary>
+----
+## @ContextConfiguration
 
-# @Test
-</details>
-<details markdown="1">
-<summary style="font-size:20px;"> @Before </summary>
+**[⬆ go to top](#Annotation)**
 
-</details>
-<details markdown="1">
-<summary style="font-size:20px;"> @ </summary>
+----
+## @Test
 
-</details>
-<details markdown="1">
-<summary style="font-size:20px;"> @ </summary>
+**[⬆ go to top](#Annotation)**
 
-</details>
-<details markdown="1">
-<summary style="font-size:20px;"> @ </summary>
+----
+## @WebAppConfiguration
 
-</details>
+**[⬆ go to top](#Annotation)**
+
+----

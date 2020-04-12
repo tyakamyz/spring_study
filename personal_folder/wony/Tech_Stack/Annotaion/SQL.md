@@ -1,21 +1,29 @@
-<details markdown="1">
-<summary style="font-size:20px;"> @Select </summary>
+# Annotation
 
-# @ResponseEntity
-</details><details markdown="1">
-<summary style="font-size:20px;"> @ResponseEntity </summary>
+ 1. [@Select](#Select)
+ 1. [@ResponseEntity](#ResponseEntity)
+ 1. [@Param](#Param)
+ 1. [@MapperScan](#MapperScan)
 
-# @ResponseEntity
-</details><details markdown="1">
-<summary style="font-size:20px;"> @ResponseEntity </summary>
+# Explanation
 
-# @ResponseEntity
-</details><details markdown="1">
-<summary style="font-size:20px;"> @ResponseEntity </summary>
+## @Select
 
-# @ResponseEntity
-</details><details markdown="1">
-<summary style="font-size:20px;"> @ResponseEntity </summary>
+**[⬆ go to top](#Annotation)**
 
-# @ResponseEntity
-</details>
+----
+## @ResponseEntity
+
+**[⬆ go to top](#Annotation)**
+
+----
+## @Param
+
+**[⬆ go to top](#Annotation)**
+
+----
+## @MapperScan
+
+**[⬆ go to top](#Annotation)**
+
+----
