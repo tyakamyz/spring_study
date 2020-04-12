@@ -13,8 +13,5 @@ AOP
 |Around          | 조인포인트 앞뒤에서 실행되는 어드바이스
 |AfterThrowing   | 조인포인트에서 예외가 발생했을 때 실행되는 어드바이스 
 
-<br>
-
 <img src="https://user-images.githubusercontent.com/22673024/79061003-70705400-7cc6-11ea-94c9-1a9197e63d96.jpg" width="50%">
-
 ##### 출처 : 스프링4 입문 웹 애플리케이션의 기초부터 클라우드 네이티브 입문까지
