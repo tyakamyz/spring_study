@@ -4,20 +4,20 @@ Rest Annotation
 Index   
 --------
 
-[1. @RestController](#◈-@RestController)   
-[2. @ResponseBody](#◈-@ResponseBody)     
-[3. @PathVariable](#◈-@PathVariable)   
-[4. @RequestParam](#◈-@RequestParam)   
-[5. @CrossOrign](#◈-@CrossOrign)   
-[6. @RequestBody](#◈-@RequestBody)    
-[7. @RequestMapping](#◈-@RequestMapping)   
-[8. @GetMapping](#◈-@GetMapping)    
-[9. @PostMapping](#◈-@PostMapping)    
-[10. @DeleteMapping](#◈-@DeleteMapping)    
+[1. @RestController](#◈@RestController)   
+[2. @ResponseBody](#◈@ResponseBody)     
+[3. @PathVariable](#◈@PathVariable)   
+[4. @RequestParam](#◈@RequestParam)   
+[5. @CrossOrign](#◈@CrossOrign)   
+[6. @RequestBody](#◈@RequestBody)    
+[7. @RequestMapping](#◈@RequestMapping)   
+[8. @GetMapping](#◈@GetMapping)    
+[9. @PostMapping](#◈@PostMapping)    
+[10. @DeleteMapping](#◈@DeleteMapping)    
 
 ------------------------------
 
-## ◈ @RestController
+## ◈@RestController
 * Controller가 REST 방식을 처리하기 위한 것임을 명시한다.
 * @Controller에 @ResponseBody가 추가된 것이다.
 * 주용도는 Json/Xml 형태로 객체 데이터를 반환하는 것이다.
@@ -38,7 +38,7 @@ Index
 
 <hr>
 
-## ◈ @ResponseBody
+## ◈@ResponseBody
 * 일반적인 JSP와 같은 뷰로 전달되는게 아니라 데이터 자체를 전달하기 위한 용도
 * Spring MVC의 @Controller의 메소드에서 @ResponseBody 어노테이션 사용 시 반환값을 변환하여 HTTP Response에 자동으로 작성한다. 
 * RestController에서는 내포하고 있는 속성이다.    
@@ -79,7 +79,7 @@ Index
 
 <hr>
 
-## ◈ @PathVariable
+## ◈@PathVariable
 * URL 경로에 있는 값을 파라미터로 추출하려고 할 때 사용한다.
 * URI에서 각 구분자에 들어오는 값을 처리해야 할 때 사용한다.
 * HTTP 요청에 대해 매칭되는 request parameter 값이 자동으로 들어간다.
@@ -91,7 +91,7 @@ Index
     ```
 <hr>
 
-## ◈ @RequestParam
+## ◈@RequestParam
 * Controller 단에서 클라이언트에서 URL에 파라미터를 같이 전달하는 경우 사용.
 * 파라미터의 값과 이름을 함께 전달하는 방식
 * @RequestParam 어노테이션의 괄호 안의 문자열이 전달 인자 이름(실제 값을 표시)이다.
@@ -118,7 +118,7 @@ public List<Invoice> listUsersInvoices(@PathVariable("userId") int user,
 
 <hr>
 
-## ◈ @CrossOrign
+## ◈@CrossOrign
 * Ajax의 크로스 도메인 문제를 해결해주는 어노테이션   
 1. 크로스도메인 이슈   
 웹 브라우저에서 Ajax 등을 통해 다른 도메인의 서버에 url(data)를 호출할 경우, 나타나는 보안문제
@@ -147,7 +147,7 @@ public List<Invoice> listUsersInvoices(@PathVariable("userId") int user,
 
 <hr>
 
-## ◈ @RequestBody
+## ◈@RequestBody
 * HTTP 요청 Body를 추출하여 파라미터로 변환받아 자바 객체로 전달받을 수 있는 방식.
 * 반드시 HTTP POST 요청일 경우에만 처리할 수 있다.    
 > *GET 메소드 요청의 경우에는 HTTP Body에 요청이 전달되는 것이 아니라, URL의 파라미터 전달 (ex: ` http://localhost:8080/test?id=admin&name=hanq…`) 형식으로 전달되기 때문에 @RequestBody로 받으려고 해도 서로 다른 곳을 보며 데이터가 없다는 결과를 던질 수 밖에 없다.*
@@ -201,7 +201,7 @@ public class MainController {
 
 <hr>
 
-## ◈ @RequestMapping
+## ◈@RequestMapping
 * value : 해당 url로 요청이 들어오면 이 메서드가 수행된다.
 * method : 요청 method를 명시한다. 없으면 모든 http method 형식에 대해 수행된다.   
 
@@ -227,7 +227,7 @@ public ResponseEntity<String> modify(@RequestBody ReplyVO vo, @PathVariable("rno
 
 <hr>
 
-## ◈ @GetMapping
+## ◈@GetMapping
 * 스프링 4.3 부터 추가되었다.
 * @RequestMapping(method = RequestMethod.GET) 의 축약형
 ```java
@@ -241,7 +241,7 @@ public String getText() {
 
 <hr>
 
-## ◈ @PostMapping
+## ◈@PostMapping
 * 스프링 4.3 부터 추가되었다.
 * @RequestMapping(method = RequestMethod.POST) 의 축약형
 ```java
@@ -254,7 +254,7 @@ public Ticket convert(@RequestBody Ticket ticket) {
 
 <hr>
 
-## ◈ @PutMapping
+## ◈@PutMapping
 * 스프링 4.3 부터 추가되었다.
 * @RequestMapping(method = RequestMethod.PUT) 의 축약형
 ```java
@@ -265,7 +265,7 @@ public void put(HttpServletRequest request, HttpServletResponse response) {
 ```
 <hr>
 
-## ◈ @PathcMapping
+## ◈@PathcMapping
 * 스프링 4.3 부터 추가되었다.
 * @RequestMapping(method = RequestMethod.PATCH) 의 축약형
 ```java
@@ -276,7 +276,7 @@ public void patch(HttpServletRequest request, HttpServletResponse response) {
 ```
 <hr>
 
-## ◈ @DeleteMapping
+## ◈@DeleteMapping
 * 스프링 4.3 부터 추가되었다.
 * @RequestMapping(method = RequestMethod.DELETE) 의 축약형
 ```java
