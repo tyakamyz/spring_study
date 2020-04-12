@@ -48,6 +48,8 @@ public class SomeService {
 ```
 ##### 출처: https://reiphiel.tistory.com/entry/understanding-of-spring-transaction-management-practice 
 
+<br>
+
 1. 전파(Propagation)속성   
 
     |용어                   | 의미	 
