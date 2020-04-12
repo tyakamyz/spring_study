@@ -4,18 +4,18 @@ AOP Annotation
 Index   
 --------
 
-[1. @Aspect](◈-Aspect)   
-[2. @Component](#◈-Component)     
-[3. @Pointcut](#◈-Pointcut)   
-[4. @Before](#◈-Before)   
-[5. @After](#◈-After)   
-[6. @AfterReturning](#◈-AfterReturning)    
-[7. @Around](#◈-Around)   
-[8. @AfterThrowing](#◈-AfterThrowing)    
+[1. @Aspect](#Aspect)   
+[2. @Component](#Component)     
+[3. @Pointcut](#Pointcut)   
+[4. @Before](#Before)   
+[5. @After](#After)   
+[6. @AfterReturning](#AfterReturning)    
+[7. @Around](#Around)   
+[8. @AfterThrowing](#AfterThrowing)    
 
 ------------------------------
 
-## ◈ @Aspect
+## @Aspect
 * @Aspect를 선언하여 해당 클래스를 AOP클래스로 사용하겠다는 의미
 ```java
 @Aspect
@@ -28,7 +28,7 @@ public class LogAdvice {
 
 <hr>
 
-## ◈ @Component
+## @Component
 * @Bean과 동일하게 Spring Bean 등록 어노테이션
 ```java
 @Aspect
@@ -40,7 +40,7 @@ public class LogAdvice {
 ```
 <hr>
 
-## ◈ @Pointcut
+## @Pointcut
 * 어노테이션 설정으로 포인트 컷을 선언할 경우 사용
 * Aspect에서 마치 변수와 같이 재사용 가능한 Pointcut을 정의할 수 있다. 이를 사용하여 미리 지정된 메소드명으로 표현식을 그대로 사용할 수 있다.
 ```java
@@ -67,7 +67,7 @@ public class Performance {
 ```
 <hr>
 
-## ◈ @Before
+## @Before
 * 비즈니스 메소드 실행 전에 동작 
 ```java
 @Before("annotationAOP()")
@@ -78,7 +78,7 @@ public void before(JoinPoint joinPoint){
 
 <hr>
 
-## ◈ @After
+## @After
 * 비즈니스 메소드가  실행된 후 무조건 실행 
 ```java
 @After("annotationAOP()")
@@ -89,7 +89,7 @@ public void after(){
 
 <hr>
 
-## ◈ @AfterReturning
+## @AfterReturning
 *  비즈니스 메소드가 성공적으로 리턴되면 동작
 ```java
 @AfterReturning(pointcut="annotationAOP()",  returning="retValue")
@@ -101,7 +101,7 @@ public void afterReturningAOP(JoinPoint joinPoint, Object retValue){
 
 <hr>
 
-## ◈ @Around
+## @Around
 *  호출 자체를 가로채 비즈니스 메소드 실행 전후에 처리할 로직 삽입
 ```java
 @Around("annotationAOP()")
@@ -126,7 +126,7 @@ public Object measure(ProceedingJoinPoint joinPoint) throws Throwable {
 
 <hr>
 
-## ◈ @AfterThrowing
+## @AfterThrowing
 * 비즈니스 메소드 실행 중 예외가 발생하면 동작
 ```java
 @AfterThrowing(pointcut="annotationAOP()", throwing="ex") //예외값 지정
