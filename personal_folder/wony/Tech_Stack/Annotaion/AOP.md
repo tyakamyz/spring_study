@@ -135,6 +135,8 @@ public class AspectUsingAnnotation {
 ----
 ## @EnableAspectJAutoProxy
  
+- AOP를 사용하고자 하는 Class, Interface에 선언하여 AspectJ의 기능을 ON해준다
+
 **[⬆ go to top](#Annotation)**
 
 ----
