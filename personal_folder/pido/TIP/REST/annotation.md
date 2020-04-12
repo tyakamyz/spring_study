@@ -9,8 +9,11 @@ Index
 [3. @PathVariable](#◈-@PathVariable)   
 [4. @RequestParam](#◈-@RequestParam)   
 [5. @CrossOrign](#◈-@CrossOrign)   
-[6. @RequestBody](#◈-@RequestBody) 
-
+[6. @RequestBody](#◈-@RequestBody)    
+[7. @RequestMapping](#◈-@RequestMapping)   
+[8. @GetMapping](#◈-@GetMapping)    
+[9. @PostMapping](#◈-@PostMapping)    
+[10. @DeleteMapping](#◈-@DeleteMapping)    
 
 ------------------------------
 
@@ -18,7 +21,7 @@ Index
 * Controller가 REST 방식을 처리하기 위한 것임을 명시한다.
 * @Controller에 @ResponseBody가 추가된 것이다.
 * 주용도는 Json/Xml 형태로 객체 데이터를 반환하는 것이다.
-
+* @RequestMapping 메서드가 기본적으로 @ResponseBody 의미를 가정한다.
     ```java
     @RestController
     @RequestMapping("/sample")
@@ -32,8 +35,6 @@ Index
 > **HTTP Response Body가 생성되는 방식**이다.   
 > @Controller 는 **View Page를 반환**하지만,   
 > @RestController는 객체(VO,DTO)를 반환하기만 하면, 객체데이터는 **application/json 형식의 HTTP ResponseBody에 직접 작성**되게 된다.
-
-
 
 <hr>
 
@@ -200,5 +201,91 @@ public class MainController {
 
 <hr>
 
+## ◈ @RequestMapping
+* value : 해당 url로 요청이 들어오면 이 메서드가 수행된다.
+* method : 요청 method를 명시한다. 없으면 모든 http method 형식에 대해 수행된다.   
 
+    |HTTP 전송방식        
+    |------------------------------
+    | RequestMethod.GET           |
+    | RequestMethod.POST          |
+    | RequestMethod.PUT           |
+    | RequestMethod.PATCH         |
+    | RequestMethod.DELETE        |
+
+* consumes : 설정과 Content-Type request 헤더가 일치할 경우에만 URL이 호출된다.
+* produces : 설정과 Accept request 헤더가 일치할 경우에만 URL이 호출됨
+```java
+@RequestMapping(method = { RequestMethod.PUT, RequestMethod.PATCH }, 
+				value="/{rno}",
+				consumes = "application/json",
+				produces = { MediaType.TEXT_PLAIN_VALUE })
+public ResponseEntity<String> modify(@RequestBody ReplyVO vo, @PathVariable("rno") Long rno) {
+    ...
+}    
+```
+
+<hr>
+
+## ◈ @GetMapping
+* 스프링 4.3 부터 추가되었다.
+* @RequestMapping(method = RequestMethod.GET) 의 축약형
+```java
+@GetMapping(value="/getText", produces="text/plain; charset=UTF-8")
+public String getText() {
+    log.info("MIME TYPE: " + MediaType.TEXT_PLAIN_VALUE);
+    
+    return "안녕하세요";
+}
+```
+
+<hr>
+
+## ◈ @PostMapping
+* 스프링 4.3 부터 추가되었다.
+* @RequestMapping(method = RequestMethod.POST) 의 축약형
+```java
+@PostMapping("/ticket")
+public Ticket convert(@RequestBody Ticket ticket) {
+    log.info("convert............ ticket " + ticket);
+    return ticket;
+}
+```
+
+<hr>
+
+## ◈ @PutMapping
+* 스프링 4.3 부터 추가되었다.
+* @RequestMapping(method = RequestMethod.PUT) 의 축약형
+```java
+@PutMapping(value = "/update") 
+public void put(HttpServletRequest request, HttpServletResponse response) { 
+    // do something 
+}
+```
+<hr>
+
+## ◈ @PathcMapping
+* 스프링 4.3 부터 추가되었다.
+* @RequestMapping(method = RequestMethod.PATCH) 의 축약형
+```java
+@PatchMapping(value = "/update") 
+public void patch(HttpServletRequest request, HttpServletResponse response) { 
+    // do something 
+}
+```
+<hr>
+
+## ◈ @DeleteMapping
+* 스프링 4.3 부터 추가되었다.
+* @RequestMapping(method = RequestMethod.DELETE) 의 축약형
+```java
+@DeleteMapping(value="/{rno}", produces = { MediaType.TEXT_PLAIN_VALUE })
+public ResponseEntity<String> remove(@PathVariable("rno") Long rno){
+    log.info("remove : " + rno);
+    
+    return service.remove(rno) == 1 ? 	new ResponseEntity<>("success", HttpStatus.OK) :
+                                        new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+}
+```
 
