@@ -15,7 +15,10 @@ AOP
 
 <img src="https://user-images.githubusercontent.com/22673024/79060763-00f96500-7cc4-11ea-9c76-5332267ebe63.png" width="60%">
 
-→ AOP에서 **공통 모듈들을 모듈화하는 것**이 Aspect
+→ AOP에서 **공통 모듈들을 모듈화하는 것**이 Aspect   
+→ 어느 부분( Where )에 횡단 관심 모듈을 삽입 할 것인지 정의한 것이 Pointcut   
+→ 언제( When ) 횡단 관심 모듈을 삽입할지를 정의한 것이 Joinpoint    
+→ 핵심 관심 모듈에 삽입 될 횡단 관심 모듈 자체( What )를 의미하는 것이 Advice
 
 <hr>
 
