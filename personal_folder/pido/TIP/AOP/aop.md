@@ -2,7 +2,7 @@
 AOP
 -----------
 
-<img src="https://user-images.githubusercontent.com/22673024/79060763-00f96500-7cc4-11ea-9c76-5332267ebe63.png" width="60%">
+<img src="https://user-images.githubusercontent.com/22673024/79060763-00f96500-7cc4-11ea-9c76-5332267ebe63.png" width="70%">
 
 ◈ 스프링이 제공하는 어드바이스
 |형태            | 설명	 
