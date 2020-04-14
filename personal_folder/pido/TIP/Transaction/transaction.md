@@ -1,6 +1,6 @@
 
 Transaction
------------
+=======================================
 
 ## ◈ Transaction 사용
 
@@ -35,8 +35,9 @@ public void addData(String value) {
 |noRollbackFor          |Spring의 트랜잭션은 기본적으로 Runtime예외만 롤백처리를 수행하지만 Runtime예외중 특정 예외는 롤백을 수행하지 않아야 할 경우 사용하는 속성.   
 |noRollbackForClassName |noRollbackFor와 동일하지만 문자열로 클래스명을 지정하는 속성.
 
+tx 어노테이션 사용법
 ```java
-@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class) 
+@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class, isolation=..., timeout=...) 
 public class SomeService { 
     
     @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.DEFAULT, timeout = 10) 

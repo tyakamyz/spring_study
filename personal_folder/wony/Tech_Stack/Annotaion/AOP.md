@@ -12,7 +12,7 @@
 # Explanation
 
 ## @Before
- 
+
 - 아래의 targetMethod()로 정의된 pointcut 이전에 수행된다.
 ```java
 @Aspect
@@ -46,12 +46,12 @@ public class AspectUsingAnnotation {
     }
 }
  ```
- 
+
 **[⬆ go to top](#Annotation)**
 
 ----
 ## @AfterReturning
- 
+
 - 정상적으로 메소드가 실핼될 때 수행하는 어노테이션
 - 아래의 targetMethod()로 정의된 pointcut 후에 수행된다, 결과는 retVal 변수에 저장된다.
 ```java
@@ -91,7 +91,7 @@ public class AspectUsingAnnotation {
     }
 }
  ```
- 
+
 **[⬆ go to top](#Annotation)**
 
 ----
@@ -121,7 +121,7 @@ public class AspectUsingAnnotation {
     }
 }
  ```
- 
+
 **[⬆ go to top](#Annotation)**
 
 ----
@@ -129,19 +129,19 @@ public class AspectUsingAnnotation {
 
  - 관점 정의 하는 어노테이션으로. 설정된 클래스가 관점로직임을 알린다
  - Spring AOP 설정에 자동으로 반영된다.
- 
+
 **[⬆ go to top](#Annotation)**
 
 ----
 ## @EnableAspectJAutoProxy
- 
+
 - AOP를 사용하고자 하는 Class, Interface에 선언하여 AspectJ의 기능을 ON해준다
 
 **[⬆ go to top](#Annotation)**
 
 ----
 ## @Pointcut
- 
+
  - 결합점(join point)를 지정하여 주변로직(Advice)가 언제 실핼 될지를 지정하는데 사용 하는 어노테이션
  - 지정자
     - execution: 메소드 실행 결합점(join points)과 일치시키는데 사용된다.
