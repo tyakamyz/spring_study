@@ -10,6 +10,7 @@
  1. [@InitBinder](#InitBinder)
  1. [@DateTimeFormat](#DateTimeFormat)
  1. [@ExceptionHandler](#ExceptionHandler)
+ 1. [@ControllerAdvice](#ControllerAdvice)
  1. [@ResponseStatus](#ResponseStatus) 
  1. [@ComponentScan](#ComponentScan)
  1. [@Transactional](#Transactional)
@@ -206,28 +207,9 @@ public class CommonExceptionAdvice {
 **[⬆ go to top](#Annotation)**
 
 ----
-
-## @ResponseStatus
-
- - HTTP 상태 코드를 제어하는 어노테이션
- - ExceptionHandler와 같이 조합해서 사용가능
-
- ```java
- @ExceptionHandler(DataFormatException.class)
- @ResponseStatus(value = HttpStatus.NOT_FOUND, reason = "My Response Status Change….!!")
- public void handleDataFormatException(DataFormatException ex,
-     HttpServletResponse response) {
- 
-     logger.info("Handlng DataFormatException - Catching: " + ex.getClass().getSimpleName());
- 
- ```
-- ReponsCode의 변환가능
-
-**[⬆ go to top](#Annotation)**
-
-----
 ## @ControllerAdvice
  - 해당 객체가 스프링의 컨트롤러에서 발생하는 예외를 처리하는 존재임을 명시하는 용도
+ - @ExceptionHandler 보다 큰 범위에서 사용
  ```java
 @ControllerAdvice
 @Log4j
@@ -245,6 +227,25 @@ public class CommonExceptionAdvice {
 
 }
 ```
+
+**[⬆ go to top](#Annotation)**
+
+----
+## @ResponseStatus
+
+ - HTTP 상태 코드를 제어하는 어노테이션
+ - ExceptionHandler와 같이 조합해서 사용가능
+
+ ```java
+ @ExceptionHandler(DataFormatException.class)
+ @ResponseStatus(value = HttpStatus.NOT_FOUND, reason = "My Response Status Change….!!")
+ public void handleDataFormatException(DataFormatException ex,
+     HttpServletResponse response) {
+ 
+     logger.info("Handlng DataFormatException - Catching: " + ex.getClass().getSimpleName());
+ 
+ ```
+- ReponsCode의 변환가능
 
 **[⬆ go to top](#Annotation)**
 
