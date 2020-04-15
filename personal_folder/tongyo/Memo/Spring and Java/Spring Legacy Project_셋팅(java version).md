@@ -4,7 +4,7 @@
 - root-context.xml 삭제
 - servlet-context.xml 삭제
 > pom.xml
-- \<plugins> 안에 내용 추가
+- \<plugins> 안에 내용 추가 (web.xml 없이도 문제가 없기위해)
 ```xml
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
@@ -377,5 +377,26 @@ protected Filter[] getServletFilters() {    //import javax.servlet.Filter;
     characterEncodingFilter.setForceEncoding(true);
     
     return new Filter[] {characterEncodingFilter};
+}
+```
+- upload 설정
+```java
+@Override
+protected void customizeRegistration(ServletRegistration.Dynamic registration) {
+    registration.setInitParameter("throwExceptionIfNoHandlerFound", "true");
+    
+    // MultipartConfigElement(업로드파일을 저장할 공간, 업로드되는 파일의 최대 크기, 한번에 올릴 수 있는 최대 크기, 특정 사이즈의 메모리 사용)
+    MultipartConfigElement multipartConfig = new MultipartConfigElement("Users/tongbook/Desktop/study/upload/temp", 20971520, 41943040, 20971520);
+    registration.setMultipartConfig(multipartConfig);
+}
+```
+> RootConfig.java
+- upload를 위한 bean 추가
+```java
+@Bean
+public MultipartResolver multipartResolver() {
+    StandardServletMultipartResolver resolver = new StandardServletMultipartResolver();
+    
+    return resolver;
 }
 ```

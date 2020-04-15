@@ -343,3 +343,43 @@ public class JDBCTests {
     <servlet-name>appServlet</servlet-name>
 </filter-mapping>
 ```
+
+- Servlet3.1(3.0)을 사용하기 위해 버전 변경
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee https://java.sun.com/xml/ns/javaee/web-app_3_1.xsd"
+	id="WebApp_ID version=3.1">
+```
+
+- upload 설정
+```xml
+<servlet>
+    <servlet-name>appServlet</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <init-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>/WEB-INF/spring/appServlet/servlet-context.xml</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+    
+    <multipart-config>
+        <!-- 업로드파일을 저장할 공간 -->
+        <location>/Users/tongbook/Desktop/study/upload/temp</location>
+
+        <!--업로드되는 파일의 최대 크기-->
+        <max-file-size>20971520</max-file-size>	<!-- 20MB -->
+
+        <!--한번에 올릴 수 있는 최대 크기-->
+        <max-request-size>41943040</max-request-size>	<!-- 40MB -->
+
+        <!-- 특정 사이즈의 메모리 사용 -->
+        <file-size-threshold>20971520</file-size-threshold>	<!-- 20MB -->
+    </multipart-config>
+</servlet>
+```
+> servlet-context.xml
+- upload를 위한 bean 추가
+```xml
+<beans:bean id="multipartResolver" class="org.springframework.web.multipart.support.StandardServletMultipartResolver"></beans:bean>
+```
