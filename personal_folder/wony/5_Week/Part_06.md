@@ -221,3 +221,181 @@ public void puloadAjaxPost(MultipartFile[] uploadFile) {
     - 첨부파일 공격에 대비하기 위한 업로드 파일의 확장자 제한
 
 ## **Chapter 22** 파일 업로드 상세 처리
+
+### 22.1 중복된 이름의 첨부파일 처리
+
+ - 일반적으로 '년/월/일' 단위의 폴더를 생성해서 파일을 저장한다.
+    - java.io.File에 존재하는 mkdirs()를 이용하면 필요한 상위 폴더 까지 한번에 생성할 수 있다.
+    ```java
+    private String getFolder() {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		
+		Date date = new Date();
+		
+		String str = sdf.format(date);
+		
+		return str.replace("-", File.separator);
+	}
+    ```
+- java.util.UUID의 값을 이용해서 처리
+```java
+UUID uuid = UUID.randomUUID();
+			
+uploadFileName = uuid.toString() + "_" + uploadFileName;
+```
+ - randomUUID()를 이용해서 임의의 값을 생성한다.
+
+### 22.2 섬네일 이미지 생성
+
+ - 생성 방법
+    - JDK 1.4 부터는 ImageIO를 제공하기에 이를 이용가능
+    - ImgScalr와 같은 별도의 라이브러리 사용가능
+    - 보통의 JDK에 포함된 API를 이용하는 방식보다 별도의 라이브러리를 사용하는 경우가 많은데. 이는 축소했을 떄의 크기나 해상도를 직접 조절하는 작업을 줄이기 위해서다.
+    - 해당 예제는 Thumbnailator 라이브러리를 이용한다
+```xml
+<!-- https://mvnrepository.com/artifact/net.coobird/thumbnailator -->
+<dependency>
+<groupId>net.coobird</groupId>
+<artifactId>thumbnailator</artifactId>
+<version>0.4.8</version>
+</dependency>
+```
+
+> #### 22.2.1 이미지 파일의 판단
+ - 화면에서 약간의 검사를 통해 업로드되는 파일의 확장자를 검사하지만, Ajax를 사용하는 호출은 반드시 브라우저만을 통해 들어오는 것이 아니므로 확인할 필요가 있다.
+ ```java
+ private boolean checkImageType(File file) {
+		
+		try {
+			
+			String contentType = Files.probeContentType(file.toPath());
+			
+			return contentType.startsWith("image");
+			
+		} catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+		}
+		
+		return false;
+	}
+ ```
+ > - 이미지 파일 판단 체크
+ ```java
+private boolean checkImageType(File file) {
+    
+    try {
+        
+        Path path = file.toPath();
+        String mineType = URLConnection.guessContentTypeFromName(path.toString());
+
+//			String contentType = Files.probeContentType(path);
+        
+        return mineType.startsWith("image");
+        
+    } catch (Exception e) {
+        // TODO: handle exception
+        e.printStackTrace();
+    }
+    
+    return false;
+}
+ ```
+ > - 예제의 Files.probeContentType(path)를 사용하려 했지만 해당 함수에서 null값이 반환되 제대로된 마인타입을 체크할 수 없었다.
+ > - 대신으로 URLConnection.guessContentTypeFormName(); 함수로 마인타입을 체크했다.
+ - 섬네일 생성
+ ```java
+File saveFile = new File(uploadPath,uploadFileName);
+multipartFile.transferTo(saveFile);
+// check image typoe file
+if(checkImageType(saveFile)) {
+    FileOutputStream thumbnail = new FileOutputStream(new File(uploadPath, "s_" + uploadFileName));
+    
+    Thumbnailator.createThumbnail(multipartFile.getInputStream(), thumbnail, 100,100);
+    
+    thumbnail.close();
+
+ ```
+
+ ### 22.3 업로드된 파일의 데이터 반환
+
+ - 브라우저로 전송해야 하는 데이터는 다음과 같은 정보를 포함하도록 설계하여야 한다.
+    - 업로드된 파일의 이름과 원본 파일의 이름
+    - 파일이 저장된 경로
+    - 업로드된 파일이 이미지인지 아닌지에 대한 정보
+ - 위에 대한 처리 방식
+    1. 업로드된 경로가 포함된 파일이름 반환
+    1. 별도의 객체를 생성해서 처리하는 방법
+    - 1의 경우 브라우저에서 처리해야할 일이 많기에 예제는 2의 방식으로 구현
+```java
+@PostMapping(value = "/uploadAjaxAction", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	@ResponseBody
+	public ResponseEntity<List<AttachFileDTO>> puloadAjaxPost(MultipartFile[] uploadFile) {
+		
+		List<AttachFileDTO> list = new ArrayList<AttachFileDTO>();
+		
+		log.info("updata ajax post......");
+		
+		String uploadFolder = "/Users/yun-wonhui/Desktop/upload";
+		
+		
+		// make folder -----
+		String uploadFolderPath = getFolder();
+		File uploadPath = new File(uploadFolder, uploadFolderPath);
+		log.info("upload path : " + uploadPath);
+		
+		if(uploadPath.canExecute() == false) {
+			uploadPath.mkdirs();
+		}
+		// make yyyy/MM/dd
+		
+		for(MultipartFile multipartFile : uploadFile) {
+			
+			AttachFileDTO attchDto = new AttachFileDTO();
+			
+			log.info("-----------------------------------");
+			log.info("Upload File Name : " + multipartFile.getOriginalFilename());
+			log.info("Upload File Size : " + multipartFile.getSize());
+			
+			String uploadFileName = multipartFile.getOriginalFilename();
+			
+			//IE has file path
+			uploadFileName = uploadFileName.substring(uploadFileName.lastIndexOf("\\")+1);
+			log.info("only file name: " + uploadFileName );
+			
+			attchDto.setFileName(uploadFileName);
+			
+			UUID uuid = UUID.randomUUID();
+			
+			uploadFileName = uuid.toString() + "_" + uploadFileName;
+			
+			// File saveFile = new File(uploadFolder,uploadFileName);
+			
+			try {
+				File saveFile = new File(uploadPath,uploadFileName);
+				multipartFile.transferTo(saveFile);
+				
+				attchDto.setUuid(uuid.toString());
+				attchDto.setUploadPath(uploadFolderPath);
+				
+				// check image typoe file
+				if(checkImageType(saveFile)) {
+					FileOutputStream thumbnail = new FileOutputStream(new File(uploadPath, "s_" + uploadFileName));
+					
+					Thumbnailator.createThumbnail(multipartFile.getInputStream(), thumbnail, 100,100);
+					
+					thumbnail.close();
+				}
+				
+				list.add(attchDto);
+				
+			} catch (Exception e) {
+				// TODO: handle exception
+				log.error(e.getMessage());
+			}
+			
+		}
+		
+		return new ResponseEntity<List<AttachFileDTO>>(list,HttpStatus.OK);
+	}
+```
