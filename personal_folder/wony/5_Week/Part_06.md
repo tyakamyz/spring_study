@@ -49,3 +49,175 @@
     <button>Submit</button>
 </form>
 ```
+
+#### 21.2.1 MultipartFile 타입
+
+ - web.xml 의 \<servlet> 내부에 \<multipart-config> 선언해야한다
+ - Java 사용 예
+ ```java
+@PostMapping("/uploadFormAction")
+public void uploadFormPost(MultipartFile[] uploadFile, Model model) {
+    
+    for(MultipartFile multipartFile : uploadFile) {
+        
+        log.info("-----------------------------");
+        log.info("Upload File Name = " + multipartFile.getOriginalFilename());
+        log.info("Upload File Size = " + multipartFile.getSize());
+        
+    }
+}
+ ```
+
+  - 메서드 종류
+
+  |메서드|설명
+  |--|--
+  |String getName()|파라미터의 이름 \<input> 태그의 이름
+  |String getOriginalFileNmae()|업로드되는 파일의 이름
+  |boolean isEmpty()|파일이 존재하지 않는 경우 true
+  |long getSize()|업로드되는 파일의 크기
+  |byte[] getBytes()|byte[]로 파일 데이터 변환
+  |iuputStream getInputStream()|파일데이터와 연결된 inputStream을 반환
+  |transferTo(File file)|파일의 저장
+
+  - 파일 저장
+    - 업로드 되는 파일을 저장하는 방법은 간단히 **transferTo()** 를 이용한다
+```java
+@PostMapping("/uploadFormAction")
+	public void uploadFormPost(MultipartFile[] uploadFile, Model model) {
+		
+		String uploadFolder = "/Users/yun-wonhui/Desktop/upload";
+		
+		for(MultipartFile multipartFile : uploadFile) {
+			
+			log.info("-----------------------------");
+			log.info("Upload File Name = " + multipartFile.getOriginalFilename());
+			log.info("Upload File Size = " + multipartFile.getSize());
+			
+			
+			File saveFile = new File(uploadFolder, multipartFile.getOriginalFilename());
+			
+			try {
+				multipartFile.transferTo(saveFile);
+			} catch (Exception e) {
+				// TODO: handle exception
+				log.error(e.getMessage());
+			}
+		}
+	}
+```
+
+### 21.3 Ajax를 이용하는 파일 업로드
+
+ - Ajax를 이용하는 첨부파일 처리는 FormData라는 객체를 이용하는데 IE의 경우 10 이후의 버전부터 지원되므로 브라우저의 제약이 있을 수 있다.
+
+ ```javascript
+<script type="text/javascript">
+$(document).ready(function(){
+    $('#uploadBtn').on('click', function(e){
+
+        var formData = new FormData();
+        
+        var inputFile = $('input[name="uploadFile"]');
+        
+        var files = inputFile[0].files;
+        
+        console.log(files);
+        
+    })
+})
+</script>
+ ```
+  - 결과(File 4개 등록)
+
+ <img src='../img/FileUploadAjax.png'></br>
+  - JQuery를 이용하는 경우 파일업로드는 **FormData** 라는 객체를 이용한다(브라우저 제약있음)
+  - FormData는 쉽게 말해 가상의 \<form> 태그로 생각하면 된다.
+
+```javascript
+  <script type="text/javascript">
+  	$(document).ready(function(){
+  		$('#uploadBtn').on('click', function(e){
+
+  			var formData = new FormData();
+  			
+  			var inputFile = $('input[name="uploadFile"]');
+  			
+  			var files = inputFile[0].files;
+  			
+  			console.log(files);
+  			
+  			//add filedate to formdata
+  			for(var i = 0; i < files.length; i++){
+  				
+  				formData.append("uploadFile",files[i]);
+
+  			}
+  			
+  			$.ajax({
+  				url:'/uploadAjaxAction',
+  				processData : false,
+  				contentType : false,
+  				data : formData,
+  				type : 'POST',
+  				success : function(result){
+  					alert("Uploaded");
+  				}
+  			});
+  			
+  		});
+  	});
+  </script>
+```
+ - 첨부파일 데이터는 formData에 추가한뒤 Ajax를 통해 formData 자체를 전송한다.
+    - 이 때 processData, contentType은 반드시 'false'로 지정해야하만 전송이 된다.
+        > - processData : 일반적으로 서버에 전달되는 데이터는 query string('url?i_title=제목')으로 전달된다. data 파라미터로 전달된 데이터를 jQuery 내부적으로 query string으로 만드는데, 파일 전송의 경우 이를 하지 않아야 하기에 false로 설정한다.
+        > - contentType : 기본 값이 'application/x-www-form-urlencoded;charset=UTF-8'인데 파일의 경우 'multipart/form-data'로 전송이 되어야 하므로 false로 설정한다.
+
+ 출처 : https://repacat.tistory.com/38
+
+- Ajax 파일 업로드
+ ```java
+ @PostMapping("/uploadAjaxAction")
+public void puloadAjaxPost(MultipartFile[] uploadFile) {
+    
+    log.info("updata ajax post......");
+    
+    String uploadFolder = "/Users/yun-wonhui/Desktop/upload";
+    
+    for(MultipartFile multipartFile : uploadFile) {
+        
+        log.info("-----------------------------------");
+        log.info("Upload File Name : " + multipartFile.getOriginalFilename());
+        log.info("Upload File Size : " + multipartFile.getSize());
+        
+        String uploadFileName = multipartFile.getOriginalFilename();
+        
+        //IE has file path
+        uploadFileName = uploadFileName.substring(uploadFileName.lastIndexOf("\\")+1);
+        log.info("only file name: " + uploadFileName );
+        
+        File saveFile = new File(uploadFolder,uploadFileName);
+        
+        try {
+            
+            multipartFile.transferTo(saveFile);
+            
+        } catch (Exception e) {
+            // TODO: handle exception
+            log.error(e.getMessage());
+        }
+        
+    }
+    
+}
+ ```
+ - IE의 경우에는 전체 파일의 경로가 전송되므로, 마지막 '\'를 기준으로 잘라낸 문자열이 실제 파일 이름이 된다.
+
+ - 고려해야할 점
+    - 동일한 이름으로 파일이 업로드 되었을 경우 기존 파일이 사라지는 문제
+    - 이미지 파일의 경우에는 원본 파일의 용량이 큰 경우 섬네일 이미지를 생성해야 하는 문제
+    - 이미지 파일과 일반 파일을 구분해서 다운로드 혹은 페이지에서 조회하도록 처리하는 문제
+    - 첨부파일 공격에 대비하기 위한 업로드 파일의 확장자 제한
+
+## **Chapter 22** 파일 업로드 상세 처리
