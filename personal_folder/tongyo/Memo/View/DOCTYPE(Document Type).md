@@ -1,3 +1,4 @@
+# DOCTYPE(Document Type)
 > ## 1. DOCTYPE(Document Type) 선언을 하는 이유
  - HTML은 버전 별로 지원하는 태그가 다르기 때문에 HTML이 작성된 버전정보를 미리 선언해 웹브라우저가 내용을 올바로 표시할 수 있도록 해주는 것
 - \<!DOCTYPE>은 태그가 아니며, \</DOCTYPE>을 사용하지 않아도 됨
