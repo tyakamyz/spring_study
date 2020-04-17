@@ -399,3 +399,55 @@ if(checkImageType(saveFile)) {
 		return new ResponseEntity<List<AttachFileDTO>>(list,HttpStatus.OK);
 	}
 ```
+
+## **Chapter 23** 브라우저에서 섬네일 처리
+
+- 브라우저에서의 첨부파일 업로드 결과로 JSON객체를 반환했을시 남은 작업
+    - 업로드 후에 업로드 부분을 초기화
+    - 결과 데이터를 이용해 화면에서 섬네일이나 파일 이미지를 보여주는 작업
+
+### 23.1 \<input type='file'> 초기화
+
+- \<input type='file'>은 다른 DOM 요소와 다르게 readonly라 별도의 방법으로 초기화 시켜야 한다.
+```javascript
+var cloneObj = $(".uploadDiv").clone();
+$(".uploadDiv").html(cloneObj.html());
+```
+ - 아무내용 없는 객체를 복사한 다음 첨부파일 업로드 후 복사한 객체를 덮어 씌운다.
+
+ ### 23.2 업로드된 이미지 처리
+
+  - 섬네일은 서버를 통해 특정 URI를 호출하면 보여줄 수 있도록 처리한다.
+  - 서버에서 섬네일은 GET방식을 통해서 가져올 수 있도록 처리한다.
+  - 특정한 URI 뒤에 파일 이름을 추가하면 이미지 파일 데이터를 가져와서 \<img> 태그를 장성하는 과정을 통해 처리한다.
+  - 주의 점으로 경로나 파일 이름에 한글, 공빽 등의 문자가 들어가면 문제가 발생하므로 JavaScript의 **encodeURIComponent()** 함수를 이용해서 URI에 문제가 없는 문자열을 생성해서 처리한다.
+  
+```java
+@GetMapping("/display")
+@ResponseBody
+public ResponseEntity<byte[]> getFile(String fileName){
+    
+    log.info("fileName : " + fileName);
+    
+    File file = new File("/Users/yun-wonhui/Desktop/upload/" + fileName);
+    
+    log.info("file : " + file);
+    
+    ResponseEntity<byte[]> result = null;
+    
+    try {
+        HttpHeaders header = new HttpHeaders();
+        
+        header.add("Content-Type",  URLConnection.guessContentTypeFromName(file.toPath().toString()));
+        
+        result = new ResponseEntity<byte[]>(FileCopyUtils.copyToByteArray(file),header,HttpStatus.OK);
+    } catch (Exception e) {
+        // TODO: handle exception
+        e.printStackTrace();
+    }
+    return result;
+}
+```
+- byte[] 로 이미지 파일의 데이터를 전송할 때는 브라우저에 보내주는 MIME 타입이 파일의 종류에 따라 달라지는점을 주의 해서 적절한 MIME 타입 데이터를 Http의 헤더 메시지에 포함될 수 있도록 처리한다.
+
+## **Chapter 24** 첨부파일의 다운로드 혹은 원본 보여주기
