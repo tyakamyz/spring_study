@@ -14,6 +14,7 @@
  1. [@ResponseStatus](#ResponseStatus) 
  1. [@ComponentScan](#ComponentScan)
  1. [@Transactional](#Transactional)
+ 1. [@RequestHeader](#RequestHeader)
 
 
 # Explanation
@@ -299,6 +300,19 @@ public class CommonExceptionAdvice {
 		- **2순위** : 클래스의 @Transactional
 		- **3순위** : 인터페이스의 @Transactional
  	- 위의 우선순위를 통해 인터페이스에는 가장 기준이 되는 @Transactional을 설정하고, 클래스나 메서드에 필요한 어노테이션을 처리하는 것이 좋다.
+
+**[⬆ go to top](#Annotation)**
+
+----
+## @RequestHeader
+
+ - HttpHeader 정보를 가져온다.
+
+```java
+@GetMapping(value = "/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+@ResponseBody
+public ResponseEntity<Resource> downloadFile(@RequestHeader("User-Agent") String userAgent, String fileName){
+```
 
 **[⬆ go to top](#Annotation)**
 
