@@ -284,26 +284,28 @@ uploadFileName = uuid.toString() + "_" + uploadFileName;
  ```java
 private boolean checkImageType(File file) {
     
-    try {
-        
-        Path path = file.toPath();
-        String mineType = URLConnection.guessContentTypeFromName(path.toString());
-
-//			String contentType = Files.probeContentType(path);
-        
-        return mineType.startsWith("image");
-        
-    } catch (Exception e) {
-        // TODO: handle exception
-        e.printStackTrace();
-    }
+try {
     
-    return false;
+        Path path = file.toPath();
+//			String contentType = URLConnection.guessContentTypeFromName(path.toString());
+
+    String contentType = new MimetypesFileTypeMap().getContentType(path.toString());
+//			String contentType = Files.probeContentType(path);
+    
+} catch (Exception e) {
+    // TODO: handle exception
+    e.printStackTrace();
+}
+
+return false;
 }
  ```
  > - 예제의 Files.probeContentType(path)를 사용하려 했지만 해당 함수에서 null값이 반환되 제대로된 마인타입을 체크할 수 없었다.
  > - 대신으로 URLConnection.guessContentTypeFormName(); 함수로 마인타입을 체크했다.
+ > - 이후 추가로 파일 작업하는 도중 위의 URLConnection 인터페이스도 파일 확인을 하지 못하고 null 값을 받아와서 MimetypesFileTypeMap() 클래스를 사용했다. 
+ > - 위의 문제점으로는 현재 예제의 java versiondl 1.8 openjdk로 예상된다. MimetypesFileTypeMap 클래스는 java 1.6부터 사용 가능하기에 openjdk에 사용에도 문제가 없는 걸로 판단된다.
  - 섬네일 생성
+
  ```java
 File saveFile = new File(uploadPath,uploadFileName);
 multipartFile.transferTo(saveFile);
@@ -451,3 +453,148 @@ public ResponseEntity<byte[]> getFile(String fileName){
 - byte[] 로 이미지 파일의 데이터를 전송할 때는 브라우저에 보내주는 MIME 타입이 파일의 종류에 따라 달라지는점을 주의 해서 적절한 MIME 타입 데이터를 Http의 헤더 메시지에 포함될 수 있도록 처리한다.
 
 ## **Chapter 24** 첨부파일의 다운로드 혹은 원본 보여주기
+
+ - 첨부파일이 이미지인 경우 섬네일 이미지를 클릭했을 때 화면에 크게 원본 파일을 보여주는 형태로 처리되어야 한다.
+- 이 경우 브라우저에서 새로운 \<div> 등을 생성 해서 처리하는 방식을 이용하는데 흔히 'light-box'라고 한다. jQuery를 이용하는 많은 플러그인들이 있으므로, 이를 이용하거나 직접 구현이 가능하다.
+
+### 24.1 첨부파일의 다운로드
+
+ - 서버에서 MIME 타입을 다운로드 타입으로 지정하고, 적절한 헤더 메시지를 통해서 다운로드 이름을 지정하게 처리한다.
+ - 이미지와 달리 다운로드는 MIME 타입이 고정된다.
+ ```java
+@GetMapping(value = "/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+@ResponseBody
+public ResponseEntity<Resource> downloadFile(String fileName){
+    
+    log.info("fownload file : " + fileName);
+    
+    Resource resource = new FileSystemResource("/Users/yun-wonhui/Desktop/upload/" + fileName);
+    
+    log.info("resource : " + resource);
+
+    return null;
+}
+ ```
+  - ResponseEntity<>의 타입은 byte[] 등을 사용할 수 있으나, 위의 예제는 Resource 타입을 이용해 좀 더 간단히 처리 하였다.
+
+```java
+@GetMapping(value = "/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+@ResponseBody
+public ResponseEntity<Resource> downloadFile(String fileName){
+    
+    log.info("fownload file : " + fileName);
+    
+    Resource resource = new FileSystemResource("/Users/yun-wonhui/Desktop/upload/" + fileName);
+    
+    log.info("resource : " + resource);
+    
+    String resourceName = resource.getFilename();
+    
+    HttpHeaders headers = new HttpHeaders();
+    
+    try {
+        
+        headers.add("Content-Disposition", "attachment; filename=" + new String(resourceName.getBytes("UTF-8"), "ISO-8859-1"));
+        
+    } catch (Exception e) {
+        // TODO: handle exception'
+        e.printStackTrace();
+    }
+
+    return new ResponseEntity<Resource>(resource, headers, HttpStatus.OK);
+}
+```
+- MIME 타입은 다운로드를 할 수 있는 'application/octet-stream'으로 지정
+- 다운로드 시 저장되는 이름은 'Cotent-Disposition'을 이용해서 저장한다.
+    - 파일 이름에 대한 문자열 처리는 파일 이름이 한글인 경우 저장할 때 깨지는 문제를 막기 위해서 이다.
+
+#### 24.1.1 IE/Edge 브라우저 문제
+- 첨부파일 다운로드 시 Chrome 브라우저와 달리 IE에서는 한글이름이 제대로 다운되지 않는다.
+    - 이것은 'Content-Disposition'의 값을 처리하는 방식이 IE의 경ㅇ우 인코딩 방식이 다르기 떄문이다.
+- IE를 같이 서비스 해야 한다면 HttpServletRequest에 포함된 헤더 정보들을 이용해서 요청이 발생한 브라우저가 IE계열인지 확인해서 다르게 처리하는 방식으로 처리한다.
+- HTTP 헤더 메시지 중 디바이스의 정보를 알 수 있는 헤더인 **'User-Agent'** 값을이용한다.
+    > - User-Agent를 통해 브라우저의 종류, 모바일/데스크톱인지 혹은 브라우저 프로그램의 종류를 구분할 수 있다.
+```java
+public ResponseEntity<Resource> downloadFile(@RequestHeader("User-Agent") String userAgent, String fileName){
+try {
+        
+    String downloadName = null;
+    
+    if(userAgent.contains("Trident")) {
+        log.info("IE browser");
+        
+        downloadName = URLEncoder.encode(resourceName, "UTF-8").replace("\\+", " ");
+    }else if(userAgent.contains("Edge")) {
+        
+        log.info("Edge browser");
+        
+        downloadName = URLEncoder.encode(resourceName, "UTF-8");
+        
+        log.info("Edge name : " + downloadName);
+    }else {
+        log.info("Chrome browser");
+        
+        downloadName = new String(resourceName.getBytes("UTF-8"), "ISO-8859-1");
+    }
+    
+    headers.add("Content-Disposition", "attachment; filename=" + downloadName);
+    
+} catch (Exception e) {
+    // TODO: handle exception'
+    e.printStackTrace();
+}
+```
+
+- @RequestHeader를 이용해서 필용한 HTTP 헤더 메시지의 내용을 수집할 수 있다.
+- 이를 통해 'User-Agent'의 정보를 파악하고, 값이 'MSIE' 혹은 'Trident'(IE 브라우저의 엔진이름 - IE11처리)인 경우에는 다른 방식으로 처리하도록 한다.
+
+
+### 24.2 첨부파일 삭제
+
+ - 삭제 시 고려해야 할 점
+    - 이미지 파일의 경우에는 섬네일까지 같이 삭제
+    - 파일을 삭제한 후 브라우저에서도 섬네일이나 파일 아이콘이 삭제되도록 처리
+    - 비정상적으로 브라우저의 종료 시 업로드된 파일의 처리
+ - 업로드된 첨부파일의 삭제는 업로드 시와 동일하게 \<form> 태그 , Ajax 방식 모두 사용 가능하다.
+ ```java
+ @PostMapping("/deleteFile")
+@ResponseBody
+public ResponseEntity<String> deleteFile(String fileName, String type){
+    
+    log.info("deleteFile : " + fileName);
+    
+    File file;
+    
+    try {
+        file = new File("/Users/yun-wonhui/Desktop/upload/" + URLDecoder.decode(fileName, "UTF-8"));
+        
+        file.delete();
+        
+        if(type.equals("image")) {
+            
+            String largeFileName = file.getAbsolutePath().replace("s_", "");
+            
+            log.info("largeFileName: " + largeFileName);
+            
+            file = new File(largeFileName);
+            
+            file.delete();
+        }
+            
+            
+    } catch (Exception e) {
+        // TODO: handle exception
+        e.printStackTrace();
+        return new ResponseEntity<String>(HttpStatus.NOT_FOUND);
+    }
+    
+    return new ResponseEntity<String>("delete", HttpStatus.OK);
+}
+ ```
+  - 브라우저에서 전송하는 파일 이름과 종류를 파라미터로 받아서 파일의 종류에 따라 다르게 동작한다.
+
+  - 강제종료, 작업 관리자를 통한 종료시 첨부파일 삭제를 감지할 수 있는 방법이 없다.
+    - 해결책으로는 실제로 최종적인 결과와 서버에 업로드된 파일의 목록을 비교해서 처리하는방법이다.
+    - 보통 이런작업은 spring-batch나 Quartz 라이브러리를 사용한다.
+
+## **Chpater 25** 프로젝트의 첨부파일 - 등록
