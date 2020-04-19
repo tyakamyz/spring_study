@@ -596,3 +596,197 @@ public ResponseEntity<String> deleteFile(String fileName, String type){
     - 보통 이런작업은 spring-batch나 Quartz 라이브러리를 사용한다.
 
 ## **Chpater 25** 프로젝트의 첨부파일 - 등록
+## **Chpater 26** 게시물의 조회와 첨부파일
+
+- File등록 Ajax
+```javascript
+$.getJSON("/board/getAttachList", {bno : bno}, function(arr){
+var str = "";
+
+    $(arr).each(function(i, attach){
+        
+        //image type
+        if(attach.fileType){
+            
+            var fileCallPath = encodeURIComponent(attach.uploadPath+"/s_"+attach.uuid+"_"+attach.fileName);
+            
+            str += "<li data-path='"+attach.uploadPath+"' data-uuid='"+attach.uuid+"' data-filename='"+attach.fileName+"' data-type='"+attach.fileType+"'>";
+            str += "<div>";
+            str += "<img src='/display?fileName="+fileCallPath+"'>";
+            str += "</div>";
+            str += "</li>";
+        }
+        
+        $(".uploadResult ul").html(str);
+        
+    });
+});
+```
+
+## **Chpater 27** 게시물의 삭제와 첨부파일
+
+ - 이미지파일의 섬네일 생성되었을 경우 이에대한 삭제 처리도 필요하다
+ - 순서
+    - 해당 게시물의 첨부파일 정보를 미리 준비
+    - 데이터베이스 상에서 해당 게시물과 첨부파일 데이터 삭제
+    - 첨부파일 목록을 이용해서 해당 폴더에서 섬네일 이미지(이미지 파일의경우)와 일반 파일을 삭제
+
+```java
+public void deleteFiles(List<BoardAttachVO> attachList) {
+		
+    if(attachList == null || attachList.size() == 0) {
+        return ;
+    }
+    
+    log.info("delete attach fiels....................");
+    log.info(attachList);
+    
+    attachList.forEach(attach ->{
+        try {
+            Path file = Paths.get("/Users/yun-wonhui/Desktop/upload/" + attach.getUploadPath() + "\\" + attach.getUuid()+"_"+attach.getFileName());
+            
+            Files.deleteIfExists(file);
+            
+            if(URLConnection.guessContentTypeFromName(file.toString()).startsWith("image")) {
+                Path thumNail = Paths.get("/Users/yun-wonhui/Desktop/upload/" + attach.getUploadPath() + "\\s_" + attach.getUuid()+"_"+attach.getFileName());
+                
+                Files.deleteIfExists(thumNail);
+            }
+        } catch (Exception e) {
+            // TODO: handle exception
+            log.error("delete file error" + e.getMessage());
+        }
+    });
+}
+	
+@PostMapping("/remove")
+public String remove(@RequestParam("bno") Long bno, Criteria cri, RedirectAttributes rttr) {
+    log.info("remove....." + bno);
+    
+    List<BoardAttachVO> attachList = service.getAttachList(bno);
+    
+    if(service.remove(bno)) {
+        //delte Attach Files
+        deleteFiles(attachList);
+        
+        rttr.addFlashAttribute("result", "success");
+    }
+    
+    return "redirect:/board/list" + cri.getListLink();
+}
+```
+
+## **Chpater 28** 게시물의 수정과 첨부파일
+ - 파일 수정처리
+    - 기존의 파일 전부 삭제 후 남아있는 파일을 재등록 하는 방식으로 처리
+
+## **Chpater 29** 잘못 업로드된 파일 삭제
+ 
+  - Ajax를 이용해서 첨부파일을 사용하면 사용자가 게시물을 등록하거나 수정하기 전에 미리 업로드시킨 파일들을 볼 수 있다는 장점이 있지만 다음과 같은 문제가 발생한다.
+    - 첨부파일만을 등록하고 게시물을 등록하지 않았을 경우
+        - 파일은 이미 서버에 업로드 되었지만, 게시물을 등록하지 않아 의미없이 파일들만 서버에 업로드된 상황
+    - 게시물을 수정할 때 파일을 삭제했지만 실제로 폴더에서 기존 파일은 삭제되지 않은 문제
+        - 데이터 베이스에는 기존 파일이 삭제되었지만, 실제 폴더에 남는 문제
+ - 위의 문제들은 일반적으로 비정상적인 종료로 인해 나타나는 문제들이다.(강제종료, 업로드 중 페이지 빠져나가는 경우)
+
+ ### 29.1 잘못 업로드된 파일의 정리
+  - 최종적으로 submit을 하지 않은 경우에는 폴더에 파일들은 업로드되지만, 데이터베이스에는 아무 변화가 없게 된다. 이를 이용ㅎ새 데이터베이스와 비교하는 작업을 거쳐 업로드만 된 파일의 목록을 찾아야 한다.
+
+  1. 어제 날짜로 등록된 첨부파일 목록을 구한다.
+  1. 어제 업로드가 되었지만, 데이터베이스에는 존재하지 않는 파일들을 찾는다.
+  1. 데이터베이스와 비교해서 필요 없는 파일들을 삭제한다.
+
+  - 위의 작업은 주기적으로 동작해야 하기에 스케줄링을 할 수 있는 Spring-Batch나 Quartz라이브러리를 이용한다.
+
+  ### 29.2 Quartz
+
+ - 설정
+    - root-context.xml에 Namesapce task 체크후 source에  \<task:annotation-driven/> 작성
+ - 사용 예
+ ```java
+ @Log4j
+@Component
+public class FileCheckTask {
+	
+	@Scheduled(cron="0 * * * * *")
+	public void checkFiles()throws Exception{
+		log.warn("File Check Task run...................");
+		
+		log.warn("===============================================");
+	}
+
+}
+ ```
+
+  - @Scheduled 는 cron이라는 속성을 부여해서 주기를 제어한다.(매분 0초가 될때 실행)
+
+### 29.3 cron 설정과 삭제 처리
+
+ - Cron은 원래 유닉스 계열에서 사용되는 스케줄러 프로그램 이름이지만, 워낙 많이 사용되다 보니 각종 언어나 기술에 맞는 라이브러리 형태로 많이 사용된다.
+ - 속성
+ <img src="../img/cron_attr.jpg"><br>
+ 
+ |구분|설명|
+|--|--|
+|*| 모든 수|
+|?| 제외|
+|-| 기간|
+|`|특정 시간|
+|/|시작 시간과 반복시간|
+|L|마지막|
+|W|가까운 평일|
+
+ - 사용 예
+ ```java
+ private String getFolderYesterDay() {
+		
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+    
+    Calendar cal = Calendar.getInstance();
+    
+    cal.add(Calendar.DATE, -1);
+    
+    String str = sdf.format(cal.getTime());
+    
+    return str.replace("-", File.separator);
+    
+}
+
+@Scheduled(cron="0 0 2 * * *")
+public void checkFiles()throws Exception{
+    log.warn("File Check Task run...................");
+    log.warn(new Date());
+    
+    //file list in database
+    List<BoardAttachVO> fileList = attachMapper.getOldFiles();
+    
+    //ready for check file in directory with database file list
+    List<Path> fileListPaths = fileList.stream().map(vo -> Paths.get("/Users/yun-wonhui/Desktop/upload", vo.getUploadPath(), "s_" + vo.getUuid() + "_" + vo.getFileName())).collect(Collectors.toList());
+    
+    // image file has thumnail file
+    fileList.stream().filter(vo -> vo.isFileType() == true).map(vo -> Paths.get("/Users/yun-wonhui/Desktop/upload", vo.getUploadPath(), "s_" + vo.getUuid() + "_" + vo.getFileName())).forEach(p -> fileListPaths.add(p));
+    
+    log.warn("===============================================");
+    
+    fileListPaths.forEach(p -> log.warn(p));
+    
+    // files in yesterday directory
+    
+    File targetDir = Paths.get("/Users/yun-wonhui/Desktop/upload", getFolderYesterDay()).toFile();
+    
+    File[] removeFiles = targetDir.listFiles(file -> fileListPaths.contains(file.toPath()) == false);
+    
+    log.warn("--------------------------------------------");
+    
+    for(File file : removeFiles) {
+        log.warn(file.getAbsolutePath());
+        file.delete();
+    }
+}
+ ```
+
+  1. 스케줄러는 매일 새벽 2시에 동작한다.
+  1. 먼저 attachMapper를 이용해 어제 날짜로 보관되는 모든 첨부파일의 목록을 가져온다.
+  1. DB에서 가져온 파일 목록은 BoardAttachVO 타입의 객체이므로, 나중에 비교를 위해 java.nio.Paths 목록으로 변환한다. 이 때 이미지 파일의 경우 섬네일 파일도 목록에 필요하기에 별도로 처리해서 해당 날짜의 예상 파일 목록을 완성한다. 예제에서는 fileListPaths라는 변수
+  1. DB에 있는 파일들의 준비가 끝나면 실제 폴더에 있는 파일들의 목록에서 데이터 베이스에 없는 파일들을 찾아 목록으로 준비한다. 예제에서는 removeFiles 변수
+  1. 최종적으로 삭제 대상이 되는 파일들을 삭제한다.
