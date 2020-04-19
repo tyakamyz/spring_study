@@ -287,9 +287,9 @@ private boolean checkImageType(File file) {
 try {
     
         Path path = file.toPath();
-//			String contentType = URLConnection.guessContentTypeFromName(path.toString());
+			String contentType = URLConnection.guessContentTypeFromName(path.toString());
 
-    String contentType = new MimetypesFileTypeMap().getContentType(path.toString());
+    //String contentType = new MimetypesFileTypeMap().getContentType(path.toString());
 //			String contentType = Files.probeContentType(path);
     
 } catch (Exception e) {
@@ -302,8 +302,6 @@ return false;
  ```
  > - 예제의 Files.probeContentType(path)를 사용하려 했지만 해당 함수에서 null값이 반환되 제대로된 마인타입을 체크할 수 없었다.
  > - 대신으로 URLConnection.guessContentTypeFormName(); 함수로 마인타입을 체크했다.
- > - 이후 추가로 파일 작업하는 도중 위의 URLConnection 인터페이스도 파일 확인을 하지 못하고 null 값을 받아와서 MimetypesFileTypeMap() 클래스를 사용했다. 
- > - 위의 문제점으로는 현재 예제의 java versiondl 1.8 openjdk로 예상된다. MimetypesFileTypeMap 클래스는 java 1.6부터 사용 가능하기에 openjdk에 사용에도 문제가 없는 걸로 판단된다.
  - 섬네일 생성
 
  ```java
