@@ -284,26 +284,26 @@ uploadFileName = uuid.toString() + "_" + uploadFileName;
  ```java
 private boolean checkImageType(File file) {
     
-    try {
-        
-        Path path = file.toPath();
-        String mineType = URLConnection.guessContentTypeFromName(path.toString());
-
-//			String contentType = Files.probeContentType(path);
-        
-        return mineType.startsWith("image");
-        
-    } catch (Exception e) {
-        // TODO: handle exception
-        e.printStackTrace();
-    }
+try {
     
-    return false;
+        Path path = file.toPath();
+			String contentType = URLConnection.guessContentTypeFromName(path.toString());
+
+    //String contentType = new MimetypesFileTypeMap().getContentType(path.toString());
+//			String contentType = Files.probeContentType(path);
+    
+} catch (Exception e) {
+    // TODO: handle exception
+    e.printStackTrace();
+}
+
+return false;
 }
  ```
  > - 예제의 Files.probeContentType(path)를 사용하려 했지만 해당 함수에서 null값이 반환되 제대로된 마인타입을 체크할 수 없었다.
  > - 대신으로 URLConnection.guessContentTypeFormName(); 함수로 마인타입을 체크했다.
  - 섬네일 생성
+
  ```java
 File saveFile = new File(uploadPath,uploadFileName);
 multipartFile.transferTo(saveFile);
@@ -399,3 +399,394 @@ if(checkImageType(saveFile)) {
 		return new ResponseEntity<List<AttachFileDTO>>(list,HttpStatus.OK);
 	}
 ```
+
+## **Chapter 23** 브라우저에서 섬네일 처리
+
+- 브라우저에서의 첨부파일 업로드 결과로 JSON객체를 반환했을시 남은 작업
+    - 업로드 후에 업로드 부분을 초기화
+    - 결과 데이터를 이용해 화면에서 섬네일이나 파일 이미지를 보여주는 작업
+
+### 23.1 \<input type='file'> 초기화
+
+- \<input type='file'>은 다른 DOM 요소와 다르게 readonly라 별도의 방법으로 초기화 시켜야 한다.
+```javascript
+var cloneObj = $(".uploadDiv").clone();
+$(".uploadDiv").html(cloneObj.html());
+```
+ - 아무내용 없는 객체를 복사한 다음 첨부파일 업로드 후 복사한 객체를 덮어 씌운다.
+
+ ### 23.2 업로드된 이미지 처리
+
+  - 섬네일은 서버를 통해 특정 URI를 호출하면 보여줄 수 있도록 처리한다.
+  - 서버에서 섬네일은 GET방식을 통해서 가져올 수 있도록 처리한다.
+  - 특정한 URI 뒤에 파일 이름을 추가하면 이미지 파일 데이터를 가져와서 \<img> 태그를 장성하는 과정을 통해 처리한다.
+  - 주의 점으로 경로나 파일 이름에 한글, 공빽 등의 문자가 들어가면 문제가 발생하므로 JavaScript의 **encodeURIComponent()** 함수를 이용해서 URI에 문제가 없는 문자열을 생성해서 처리한다.
+  
+```java
+@GetMapping("/display")
+@ResponseBody
+public ResponseEntity<byte[]> getFile(String fileName){
+    
+    log.info("fileName : " + fileName);
+    
+    File file = new File("/Users/yun-wonhui/Desktop/upload/" + fileName);
+    
+    log.info("file : " + file);
+    
+    ResponseEntity<byte[]> result = null;
+    
+    try {
+        HttpHeaders header = new HttpHeaders();
+        
+        header.add("Content-Type",  URLConnection.guessContentTypeFromName(file.toPath().toString()));
+        
+        result = new ResponseEntity<byte[]>(FileCopyUtils.copyToByteArray(file),header,HttpStatus.OK);
+    } catch (Exception e) {
+        // TODO: handle exception
+        e.printStackTrace();
+    }
+    return result;
+}
+```
+- byte[] 로 이미지 파일의 데이터를 전송할 때는 브라우저에 보내주는 MIME 타입이 파일의 종류에 따라 달라지는점을 주의 해서 적절한 MIME 타입 데이터를 Http의 헤더 메시지에 포함될 수 있도록 처리한다.
+
+## **Chapter 24** 첨부파일의 다운로드 혹은 원본 보여주기
+
+ - 첨부파일이 이미지인 경우 섬네일 이미지를 클릭했을 때 화면에 크게 원본 파일을 보여주는 형태로 처리되어야 한다.
+- 이 경우 브라우저에서 새로운 \<div> 등을 생성 해서 처리하는 방식을 이용하는데 흔히 'light-box'라고 한다. jQuery를 이용하는 많은 플러그인들이 있으므로, 이를 이용하거나 직접 구현이 가능하다.
+
+### 24.1 첨부파일의 다운로드
+
+ - 서버에서 MIME 타입을 다운로드 타입으로 지정하고, 적절한 헤더 메시지를 통해서 다운로드 이름을 지정하게 처리한다.
+ - 이미지와 달리 다운로드는 MIME 타입이 고정된다.
+ ```java
+@GetMapping(value = "/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+@ResponseBody
+public ResponseEntity<Resource> downloadFile(String fileName){
+    
+    log.info("fownload file : " + fileName);
+    
+    Resource resource = new FileSystemResource("/Users/yun-wonhui/Desktop/upload/" + fileName);
+    
+    log.info("resource : " + resource);
+
+    return null;
+}
+ ```
+  - ResponseEntity<>의 타입은 byte[] 등을 사용할 수 있으나, 위의 예제는 Resource 타입을 이용해 좀 더 간단히 처리 하였다.
+
+```java
+@GetMapping(value = "/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+@ResponseBody
+public ResponseEntity<Resource> downloadFile(String fileName){
+    
+    log.info("fownload file : " + fileName);
+    
+    Resource resource = new FileSystemResource("/Users/yun-wonhui/Desktop/upload/" + fileName);
+    
+    log.info("resource : " + resource);
+    
+    String resourceName = resource.getFilename();
+    
+    HttpHeaders headers = new HttpHeaders();
+    
+    try {
+        
+        headers.add("Content-Disposition", "attachment; filename=" + new String(resourceName.getBytes("UTF-8"), "ISO-8859-1"));
+        
+    } catch (Exception e) {
+        // TODO: handle exception'
+        e.printStackTrace();
+    }
+
+    return new ResponseEntity<Resource>(resource, headers, HttpStatus.OK);
+}
+```
+- MIME 타입은 다운로드를 할 수 있는 'application/octet-stream'으로 지정
+- 다운로드 시 저장되는 이름은 'Cotent-Disposition'을 이용해서 저장한다.
+    - 파일 이름에 대한 문자열 처리는 파일 이름이 한글인 경우 저장할 때 깨지는 문제를 막기 위해서 이다.
+
+#### 24.1.1 IE/Edge 브라우저 문제
+- 첨부파일 다운로드 시 Chrome 브라우저와 달리 IE에서는 한글이름이 제대로 다운되지 않는다.
+    - 이것은 'Content-Disposition'의 값을 처리하는 방식이 IE의 경ㅇ우 인코딩 방식이 다르기 떄문이다.
+- IE를 같이 서비스 해야 한다면 HttpServletRequest에 포함된 헤더 정보들을 이용해서 요청이 발생한 브라우저가 IE계열인지 확인해서 다르게 처리하는 방식으로 처리한다.
+- HTTP 헤더 메시지 중 디바이스의 정보를 알 수 있는 헤더인 **'User-Agent'** 값을이용한다.
+    > - User-Agent를 통해 브라우저의 종류, 모바일/데스크톱인지 혹은 브라우저 프로그램의 종류를 구분할 수 있다.
+```java
+public ResponseEntity<Resource> downloadFile(@RequestHeader("User-Agent") String userAgent, String fileName){
+try {
+        
+    String downloadName = null;
+    
+    if(userAgent.contains("Trident")) {
+        log.info("IE browser");
+        
+        downloadName = URLEncoder.encode(resourceName, "UTF-8").replace("\\+", " ");
+    }else if(userAgent.contains("Edge")) {
+        
+        log.info("Edge browser");
+        
+        downloadName = URLEncoder.encode(resourceName, "UTF-8");
+        
+        log.info("Edge name : " + downloadName);
+    }else {
+        log.info("Chrome browser");
+        
+        downloadName = new String(resourceName.getBytes("UTF-8"), "ISO-8859-1");
+    }
+    
+    headers.add("Content-Disposition", "attachment; filename=" + downloadName);
+    
+} catch (Exception e) {
+    // TODO: handle exception'
+    e.printStackTrace();
+}
+```
+
+- @RequestHeader를 이용해서 필용한 HTTP 헤더 메시지의 내용을 수집할 수 있다.
+- 이를 통해 'User-Agent'의 정보를 파악하고, 값이 'MSIE' 혹은 'Trident'(IE 브라우저의 엔진이름 - IE11처리)인 경우에는 다른 방식으로 처리하도록 한다.
+
+
+### 24.2 첨부파일 삭제
+
+ - 삭제 시 고려해야 할 점
+    - 이미지 파일의 경우에는 섬네일까지 같이 삭제
+    - 파일을 삭제한 후 브라우저에서도 섬네일이나 파일 아이콘이 삭제되도록 처리
+    - 비정상적으로 브라우저의 종료 시 업로드된 파일의 처리
+ - 업로드된 첨부파일의 삭제는 업로드 시와 동일하게 \<form> 태그 , Ajax 방식 모두 사용 가능하다.
+ ```java
+ @PostMapping("/deleteFile")
+@ResponseBody
+public ResponseEntity<String> deleteFile(String fileName, String type){
+    
+    log.info("deleteFile : " + fileName);
+    
+    File file;
+    
+    try {
+        file = new File("/Users/yun-wonhui/Desktop/upload/" + URLDecoder.decode(fileName, "UTF-8"));
+        
+        file.delete();
+        
+        if(type.equals("image")) {
+            
+            String largeFileName = file.getAbsolutePath().replace("s_", "");
+            
+            log.info("largeFileName: " + largeFileName);
+            
+            file = new File(largeFileName);
+            
+            file.delete();
+        }
+            
+            
+    } catch (Exception e) {
+        // TODO: handle exception
+        e.printStackTrace();
+        return new ResponseEntity<String>(HttpStatus.NOT_FOUND);
+    }
+    
+    return new ResponseEntity<String>("delete", HttpStatus.OK);
+}
+ ```
+  - 브라우저에서 전송하는 파일 이름과 종류를 파라미터로 받아서 파일의 종류에 따라 다르게 동작한다.
+
+  - 강제종료, 작업 관리자를 통한 종료시 첨부파일 삭제를 감지할 수 있는 방법이 없다.
+    - 해결책으로는 실제로 최종적인 결과와 서버에 업로드된 파일의 목록을 비교해서 처리하는방법이다.
+    - 보통 이런작업은 spring-batch나 Quartz 라이브러리를 사용한다.
+
+## **Chpater 25** 프로젝트의 첨부파일 - 등록
+## **Chpater 26** 게시물의 조회와 첨부파일
+
+- File등록 Ajax
+```javascript
+$.getJSON("/board/getAttachList", {bno : bno}, function(arr){
+var str = "";
+
+    $(arr).each(function(i, attach){
+        
+        //image type
+        if(attach.fileType){
+            
+            var fileCallPath = encodeURIComponent(attach.uploadPath+"/s_"+attach.uuid+"_"+attach.fileName);
+            
+            str += "<li data-path='"+attach.uploadPath+"' data-uuid='"+attach.uuid+"' data-filename='"+attach.fileName+"' data-type='"+attach.fileType+"'>";
+            str += "<div>";
+            str += "<img src='/display?fileName="+fileCallPath+"'>";
+            str += "</div>";
+            str += "</li>";
+        }
+        
+        $(".uploadResult ul").html(str);
+        
+    });
+});
+```
+
+## **Chpater 27** 게시물의 삭제와 첨부파일
+
+ - 이미지파일의 섬네일 생성되었을 경우 이에대한 삭제 처리도 필요하다
+ - 순서
+    - 해당 게시물의 첨부파일 정보를 미리 준비
+    - 데이터베이스 상에서 해당 게시물과 첨부파일 데이터 삭제
+    - 첨부파일 목록을 이용해서 해당 폴더에서 섬네일 이미지(이미지 파일의경우)와 일반 파일을 삭제
+
+```java
+public void deleteFiles(List<BoardAttachVO> attachList) {
+		
+    if(attachList == null || attachList.size() == 0) {
+        return ;
+    }
+    
+    log.info("delete attach fiels....................");
+    log.info(attachList);
+    
+    attachList.forEach(attach ->{
+        try {
+            Path file = Paths.get("/Users/yun-wonhui/Desktop/upload/" + attach.getUploadPath() + "\\" + attach.getUuid()+"_"+attach.getFileName());
+            
+            Files.deleteIfExists(file);
+            
+            if(URLConnection.guessContentTypeFromName(file.toString()).startsWith("image")) {
+                Path thumNail = Paths.get("/Users/yun-wonhui/Desktop/upload/" + attach.getUploadPath() + "\\s_" + attach.getUuid()+"_"+attach.getFileName());
+                
+                Files.deleteIfExists(thumNail);
+            }
+        } catch (Exception e) {
+            // TODO: handle exception
+            log.error("delete file error" + e.getMessage());
+        }
+    });
+}
+	
+@PostMapping("/remove")
+public String remove(@RequestParam("bno") Long bno, Criteria cri, RedirectAttributes rttr) {
+    log.info("remove....." + bno);
+    
+    List<BoardAttachVO> attachList = service.getAttachList(bno);
+    
+    if(service.remove(bno)) {
+        //delte Attach Files
+        deleteFiles(attachList);
+        
+        rttr.addFlashAttribute("result", "success");
+    }
+    
+    return "redirect:/board/list" + cri.getListLink();
+}
+```
+
+## **Chpater 28** 게시물의 수정과 첨부파일
+ - 파일 수정처리
+    - 기존의 파일 전부 삭제 후 남아있는 파일을 재등록 하는 방식으로 처리
+
+## **Chpater 29** 잘못 업로드된 파일 삭제
+ 
+  - Ajax를 이용해서 첨부파일을 사용하면 사용자가 게시물을 등록하거나 수정하기 전에 미리 업로드시킨 파일들을 볼 수 있다는 장점이 있지만 다음과 같은 문제가 발생한다.
+    - 첨부파일만을 등록하고 게시물을 등록하지 않았을 경우
+        - 파일은 이미 서버에 업로드 되었지만, 게시물을 등록하지 않아 의미없이 파일들만 서버에 업로드된 상황
+    - 게시물을 수정할 때 파일을 삭제했지만 실제로 폴더에서 기존 파일은 삭제되지 않은 문제
+        - 데이터 베이스에는 기존 파일이 삭제되었지만, 실제 폴더에 남는 문제
+ - 위의 문제들은 일반적으로 비정상적인 종료로 인해 나타나는 문제들이다.(강제종료, 업로드 중 페이지 빠져나가는 경우)
+
+ ### 29.1 잘못 업로드된 파일의 정리
+  - 최종적으로 submit을 하지 않은 경우에는 폴더에 파일들은 업로드되지만, 데이터베이스에는 아무 변화가 없게 된다. 이를 이용ㅎ새 데이터베이스와 비교하는 작업을 거쳐 업로드만 된 파일의 목록을 찾아야 한다.
+
+  1. 어제 날짜로 등록된 첨부파일 목록을 구한다.
+  1. 어제 업로드가 되었지만, 데이터베이스에는 존재하지 않는 파일들을 찾는다.
+  1. 데이터베이스와 비교해서 필요 없는 파일들을 삭제한다.
+
+  - 위의 작업은 주기적으로 동작해야 하기에 스케줄링을 할 수 있는 Spring-Batch나 Quartz라이브러리를 이용한다.
+
+  ### 29.2 Quartz
+
+ - 설정
+    - root-context.xml에 Namesapce task 체크후 source에  \<task:annotation-driven/> 작성
+ - 사용 예
+ ```java
+ @Log4j
+@Component
+public class FileCheckTask {
+	
+	@Scheduled(cron="0 * * * * *")
+	public void checkFiles()throws Exception{
+		log.warn("File Check Task run...................");
+		
+		log.warn("===============================================");
+	}
+
+}
+ ```
+
+  - @Scheduled 는 cron이라는 속성을 부여해서 주기를 제어한다.(매분 0초가 될때 실행)
+
+### 29.3 cron 설정과 삭제 처리
+
+ - Cron은 원래 유닉스 계열에서 사용되는 스케줄러 프로그램 이름이지만, 워낙 많이 사용되다 보니 각종 언어나 기술에 맞는 라이브러리 형태로 많이 사용된다.
+ - 속성
+ <img src="../img/cron_attr.jpg"><br>
+ 
+ |구분|설명|
+|--|--|
+|*| 모든 수|
+|?| 제외|
+|-| 기간|
+|`|특정 시간|
+|/|시작 시간과 반복시간|
+|L|마지막|
+|W|가까운 평일|
+
+ - 사용 예
+ ```java
+ private String getFolderYesterDay() {
+		
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+    
+    Calendar cal = Calendar.getInstance();
+    
+    cal.add(Calendar.DATE, -1);
+    
+    String str = sdf.format(cal.getTime());
+    
+    return str.replace("-", File.separator);
+    
+}
+
+@Scheduled(cron="0 0 2 * * *")
+public void checkFiles()throws Exception{
+    log.warn("File Check Task run...................");
+    log.warn(new Date());
+    
+    //file list in database
+    List<BoardAttachVO> fileList = attachMapper.getOldFiles();
+    
+    //ready for check file in directory with database file list
+    List<Path> fileListPaths = fileList.stream().map(vo -> Paths.get("/Users/yun-wonhui/Desktop/upload", vo.getUploadPath(), "s_" + vo.getUuid() + "_" + vo.getFileName())).collect(Collectors.toList());
+    
+    // image file has thumnail file
+    fileList.stream().filter(vo -> vo.isFileType() == true).map(vo -> Paths.get("/Users/yun-wonhui/Desktop/upload", vo.getUploadPath(), "s_" + vo.getUuid() + "_" + vo.getFileName())).forEach(p -> fileListPaths.add(p));
+    
+    log.warn("===============================================");
+    
+    fileListPaths.forEach(p -> log.warn(p));
+    
+    // files in yesterday directory
+    
+    File targetDir = Paths.get("/Users/yun-wonhui/Desktop/upload", getFolderYesterDay()).toFile();
+    
+    File[] removeFiles = targetDir.listFiles(file -> fileListPaths.contains(file.toPath()) == false);
+    
+    log.warn("--------------------------------------------");
+    
+    for(File file : removeFiles) {
+        log.warn(file.getAbsolutePath());
+        file.delete();
+    }
+}
+ ```
+
+  1. 스케줄러는 매일 새벽 2시에 동작한다.
+  1. 먼저 attachMapper를 이용해 어제 날짜로 보관되는 모든 첨부파일의 목록을 가져온다.
+  1. DB에서 가져온 파일 목록은 BoardAttachVO 타입의 객체이므로, 나중에 비교를 위해 java.nio.Paths 목록으로 변환한다. 이 때 이미지 파일의 경우 섬네일 파일도 목록에 필요하기에 별도로 처리해서 해당 날짜의 예상 파일 목록을 완성한다. 예제에서는 fileListPaths라는 변수
+  1. DB에 있는 파일들의 준비가 끝나면 실제 폴더에 있는 파일들의 목록에서 데이터 베이스에 없는 파일들을 찾아 목록으로 준비한다. 예제에서는 removeFiles 변수
+  1. 최종적으로 삭제 대상이 되는 파일들을 삭제한다.
