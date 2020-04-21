@@ -47,3 +47,23 @@
       <version>5.0.6.RELEASE</version>
   </dependency>
   ```
+  ↑↓↑↓←→←→←→↑↓ 
+-------------
+- 인증(Authentication)과 권한(Authorization)
+  - AuthenticationManager(인증 매니저)
+    - 스프링 시큐리티에서 가장 중요한 역할을 하는 존재
+    - ProviderManager는 인증에 대한 처리를 AuthenticationProvider라는 타입의 객체를 이용해서 처리를 위임함
+      <pre>
+      [AuthenticationManager]
+                ↑
+         [ProviderManager] ←→ [AuthenticationProvider]
+      </pre>
+    - AuthenticationProvider(인증 제공자)는 실제 인증 작업을 진행
+    - 이때 인증된 정보에는 권한에 대한 정보를 같이 전달하게 되는데 이 처리는 UserDetailsService 인터페이스에서 사용자의 정보와 사용자가 가진 권한의 정보를 처리해서 반환해줌
+      <pre>
+      [AuthenticationManager]
+                ↑
+         [ProviderManager] ←→ [AuthenticationProvider] ⇠⇢ [UserDetailsService]
+      </pre>
+    - 개발자가 스프링 시큐리티를 커스터마이징 하는 방식은 크게 AuthenticationProvider를 직접 구현하는 방식과 실제 처리를 담당하는 UserDetailsService를 구현하는 방식으로 나누어짐
+    - 대부분의 겨우 UserDetailsService를 구현하는 형태를 사용하는 것 만으로도 충분하지만, 새로운 프로토콜이나 인증 구현 방식을 직접 구현하는 경우에는 AuthenticationProvider 인터페이스를 직접 구현해서 사용함
