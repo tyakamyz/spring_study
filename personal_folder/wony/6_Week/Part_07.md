@@ -116,3 +116,87 @@
 - 대부분의 경우 UserDetailsService를 구현하는 형태를 사용하는 것으로 충분하지만, **새로운 프로토콜** 이나 **인증 구현방식** 을 직접 구현하는 경우 AuthenticationManager 인터페이스를 직접 구현해서 사용한다.
 
 ## **Chapter 31** 로그인과 로그아웃 처리
+
+### 31.1 접근 제한 설정
+
+ - 특정한 URI에 접근할 떄 인터셉터를 이용해서 접근을 제한하는 설정은 \<security:intercept-url>을 이용한다.
+    - pattern이라는 속성과 access라는 속성을 지정해야만 한다.
+    - access의 속성값으로 사용되는 문자열
+        1. 표현식(권장)
+        1. 권한명을 의미하는 문자열
+    - \<security:http>는 기본설정이 표현식을 이용한 access속성이다.
+
+ - 표현식을 사용하지 않는 경우에 권한 지정
+```xml
+<security:http>
+		
+    <security:intercept-url pattern="/sample/all" access="permitAll"/>
+    
+<!-- 			ROLE_MEMBER 라는 권한이 있는 사용자면 /sample/member URI에 접근 가능하다. -->
+    <security:intercept-url pattern="/sample/member" access="hasRole('ROLE_MEMBER')"/>
+    
+    <security:form-login/>
+</security:http>
+```
+ - 표현식처리는 이후 JSP에서 확인.
+
+ - 위의 권한이 없는 URI로 접근하면 아래와 같은 login페이지로 이동한다. 별도의 로그인 페이지를 지정하지 않을경우 스프링 시큐리티에서 기본으로 제공하는 페이지로 이동한다.
+
+ ![SpringSecurityLoginDefaultPage](../img/SpringSecurityLoginDefaultPage.png)
+
+
+### 31.2 단순 로그인 처리
+
+ - 스프링 시큐리티에서 주의할점
+    - 일반 시스템의 **userid** 는 스프링 시큐리티에서는 **username** 이다.
+    - 일반 시스템의 **User** 는 **사용자 정보**를 뜻한다면 스프링 시큐리티에서는 **인증 정보, 권한을 가진 객체**이다
+ - 인증과 권한에 대한 실제처리는 UserDetailsService를 이용해 처리한다.
+ ```xml
+ <security:authentication-manager>
+    <security:authentication-provider>
+        <security:user-service>
+            <security:user name="member" password="member" authorities="ROLE_MEMBER"/>
+        </security:user-service>
+    </security:authentication-provider>
+</security:authentication-manager>
+ ```
+  - member 라는 계정 정보를 가진 사용자가 로그인을 할 수 있도록 적용
+  - 스프링 시큐리티 5버전 이상을 설정하였다면
+    - 500Error 나며 PasswordEncoder라는 존재를 이용하도록 요구한다.
+    - 임시 방편으로 포맷팅 처리를 지정해서 패스워드 인코드 방식을 지정할 수 있다.
+        - https://spring.io/blog/2017/11/01/spring-security-5-0-0-rc1-released#password-storage-format
+    - 패스워드의 인코딩 처리 없이 사용하고 싶다면 패스워드 앞에 '{noop}' 문자열을 추가한다.
+
+### 31.2.1 로그아웃 확인
+ - 개발자도구 -> Application -> Storage -> Cookies -> URL(ex.http://localhost:8080) -> JSESSIONID(톰캣에서 발행하는 쿠키이름[WAS마다 다르다]) 우클릭 삭제
+
+### 31.2.2 다중 권한 설정 사용자
+
+ - 다음과 같이 여러개의 권한을 갖는 사용자를 설정 할 수 있다.
+```xml
+<security:user name="admin" password="{noop}admin" authorities="ROLE_MEMBER, ROLE_ADMIN"/>
+```
+
+#### 31.2.3 접근 제한 메시지 처리
+
+ - 스프링 시큐리티에서 접근제한에 대해서는 AccessDeniedHandler를 직접 구현하거나 특정한 URI를 지정할 수 있다.
+
+ ```xml
+ <security:http auto-config="true" use-expressions="true">
+		
+	...생략
+			
+    <security:access-denied-handler error-page="/accessError"/>
+</security:http>
+ ```
+> - auto-config="true", use-expressions="true" 설정
+>   - auto-config : 로그인 양식, 기본 인증 및 로그 아웃 URL 및 로그 아웃 서비스를 자동으로  등록하는 속성으로 태그로보면 다음과같이 처리된다.
+>    ```html
+>   <http>
+>        <form-login/>
+>        <http-basic/>
+>        <logout/>
+>    <http/>
+>    ```
+>    - use-expressions : 스프링 표현식(spEL) 사용여부
+- \<security:access-denied-handler> sms AccessDeniedHandler 인터페이스의 구현체를 지정하거나, error-page를 지정할 수 있다. 위의 예제의 경우 '/accessError'라는 URI로 접근 제한 시 보이는 화면을 처리한다.
