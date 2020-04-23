@@ -200,3 +200,166 @@
 >    ```
 >    - use-expressions : 스프링 표현식(spEL) 사용여부
 - \<security:access-denied-handler> sms AccessDeniedHandler 인터페이스의 구현체를 지정하거나, error-page를 지정할 수 있다. 위의 예제의 경우 '/accessError'라는 URI로 접근 제한 시 보이는 화면을 처리한다.
+
+- JSP에서는 HttpServletRequest 안에 'SPRING_SECURITY_403_EXCEPTION'이라는 이름으로 AccessDeniedException 객체가 전달된다.
+
+```jsp
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+    <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+    <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags"%>
+<%@ page import="java.util.*" %>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+<h1>Access Denied Page</h1>
+
+<h2><c:out value="${SPRING_SECURITY_403_EXCEPTION.getMessage() }"/></h2>
+
+<h2><c:out value="${msg}"/></h2>
+</body>
+</html>
+```
+
+ - 접근 제한이 된 경우 다양한 처리를 하고싶다면 직접 AccessDeniedHandler 인터페이슬 구현하는 게 좋다.
+    - 예로 쿠키나 세션에 특정한 작업을하거네 HttpServletResponse에 특정한 헤더정보 추가등의 행위
+
+```java
+@Log4j
+public class CustomAccessDenieHandler implements AccessDeniedHandler{
+
+	@Override
+	public void handle(HttpServletRequest request, HttpServletResponse response,
+			AccessDeniedException accessDeniedException) throws IOException, ServletException {
+		// TODO Auto-generated method stub
+		
+		log.error("Access Denied Handler");
+		
+		log.error("Redirect....");
+		
+		response.sendRedirect("/accessError");
+		
+	}
+
+}
+```
+- 접근제한이 걸리는 경우 리다이렉트 하는 방식으로 동작하도록 지정
+```xml
+		<bean id="customAccessDenied" class="org.zerock.security.CustomAccessDenieHandler"></bean>
+			
+<!-- 			<security:access-denied-handler error-page="/accessError"/> -->
+			<security:access-denied-handler ref="customAccessDenied"/>
+```
+
+- customAccessDenied를 빈으로 등록해 사용하는방식
+    > - 위의 error-page와는 달리 url에서도 /accessError 나타나며 직접적으로 구현가능하기에 더욱 사용 용이
+
+### 31.3 커스텀 로그인 페이지
+ - 기본적인 로그인 페이지가아닌 커스텀된 로그인 화면페이지 URI 설정
+ ```xml
+ <!-- 			<security:form-login/> -->
+    <security:form-login login-page="/customLogin"/>
+ ```
+  - customLogin.jsp를 로그인 페이지로 설정
+  - 반드시 GET 방식으로 접근하는 URI를 지정해야 한다.
+
+```jsp
+<h1>Custom Login Page</h1>
+<h2><c:out value="${error}"/></h2>
+<h2><c:out value="${logout}"/></h2>
+
+<form method="post" action="/login">
+
+<div>
+    <input type="text" name="username" value="admin">
+</div>
+
+<div>
+    <input type="password" name="password" value="admin">
+</div>
+
+<div>
+    <input type="submit">
+</div>
+<input type="hidden" name="${_csrf.parameterName }" value="${_csrf.token }"/>
+
+</form>
+```
+
+### 31.4 CSRF(Cross-site request forgery) 공격과 토큰
+  - 위의 예제와같이 스프링 시큐리티에서 POST 방식을 이용하는 경우 기본적으로 CSRF 토큰을 이용한다.
+    - '사이트간 위조 방지'를 목적으로 특정한 값의 토큰을 사용
+ - CSRF 공격 : '사이트간 요청 위조'
+    - 서버에서 받아들이는 정보가 특별히 사전 조건을 검증하지 않는다는 단점을 이용하는 공격 방식
+    - 단순한 게시물 조회수 증가 등의 조작부터 피해자의 계정을 이용한 다양한 공격이 가능
+ - CSRF 방어 : 공격 자체가 사용자의 요청에 대한 출처를 검사하지 않아서 생기는 허점
+    - referer 헤더 체크
+    - REST방식에서 사용되는 PUT, DELETE와 같은 방식을 이용
+
+#### 31.4.1 CSRF 토큰
+ - 사용자가 임으로 변하는 특정한 토큰값을 서버에서 체크하는 방식
+ 1. 서버에서는 브라우저에 데이터를 전송할 떄 CSRF 토큰을 같이 전송
+ 1. 사용자가 POST 방식 등으로 특정한 작업을 할 떄 브라우저에서 전송된 CSRF 토큰의 값과 서버가 보관하고 있는 토큰의 값을 비교
+ 1. CSRF 토큰의 값이 다를 경우 작업을 처리하지 않는다.
+ - 서버에서 생성하는 토큰은 일반적으로 난수를 생성해 공격자가 패턴을 찾을 수 없도록 한다.
+ > - 공격자의 입장에서 CSRF 공격을 하기위해서는 변경되는 CSRF토큰의 값을 알아야 하기에 고정된 내용의 \<form> 태그나 \<img> 태그 등을 이용할 수 없게 된다.
+
+#### 31.4.2 스프링 시큐리티의 CSRF 설정
+
+ - 일반적으로 세선을 통해 보관, 브라우저에서 전송된 CSRF 토큰값을 검사 하는 방식이다.
+ - 스프링 시큐리티에서는 CSRF 토큰생성을 비활성하거니 CSRF 토큰을 쿠키에서 이용해서 처리하는 등의 설정을 지원한다.
+ ```xml
+<security:http auto-config="true" use-expressions="true">
+		
+    ... 생략
+    <security:csrf disabled="true"/>
+</security:http>
+ ```
+
+ 31.5 로그인 성공과 AuthenticationSuccessHandler
+
+  - 로그인 처리후 로그인 성공이후 특정 동작을 제어하고싶을 경우 AuthenticationSuccessHandler 인터페이스 구현해서 설정한다.
+  ```java
+
+@Log4j
+public class CustomLoginSuccessHandler implements AuthenticationSuccessHandler{@Override
+	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+			Authentication authentication) throws IOException, ServletException {
+		// TODO Auto-generated method stub
+	
+		log.warn("Login Success");
+		
+		List<String> roleNames = new ArrayList<String>();
+		
+		authentication.getAuthorities().forEach(authority ->{
+			roleNames.add(authority.getAuthority());
+		});
+		
+		log.warn("ROLE NAMES: " + roleNames);
+		
+		if(roleNames.contains("ROLE_ADMIN")){
+			response.sendRedirect("/sample/admin");
+			return;
+		}
+
+		if(roleNames.contains("ROLE_MEMBER")){
+			response.sendRedirect("/sample/member");
+			return;
+		}
+		
+		response.sendRedirect("/");
+		
+	}
+
+}
+  ```
+
+### 31.6 로그아웃의 처리와 LogoutSuccessHandler
+ - 로그인과 동일하게 특정 URI지정하고, 로그아웃 처리 후 직접 로직을 처리할 수 있느 핸들러를 등록 가능
+ ```xml
+ <security:logout logout-url="/customLogout" invalidate-session="true"/>
+ ```
