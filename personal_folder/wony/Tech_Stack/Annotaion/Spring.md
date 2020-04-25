@@ -15,6 +15,7 @@
  1. [@ComponentScan](#ComponentScan)
  1. [@Transactional](#Transactional)
  1. [@RequestHeader](#RequestHeader)
+ 1. [@Scheduled](#Scheduled)
 
 
 # Explanation
@@ -317,6 +318,12 @@ public ResponseEntity<Resource> downloadFile(@RequestHeader("User-Agent") String
 **[⬆ go to top](#Annotation)**
 
 ----
+## @Scheduled
 
+ - 스케줄러 어노테이션
+
+**[⬆ go to top](#Annotation)**
+
+----
 - 출처 : https://engkimbs.tistory.com/694 [새로비]
 - 출처 : https://effectivesquid.tistory.com/entry/Bean-%EA%B3%BC-Component%EC%9D%98-%EC%B0%A8%EC%9D%B4
