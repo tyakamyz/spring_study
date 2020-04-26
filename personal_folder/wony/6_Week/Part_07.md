@@ -696,14 +696,116 @@ public AuthenticationSuccessHandler loginSuccessHandler() {
 	return new CustomLoginSuccessHandler();
 }
 ```
- - @Bean tjfwjddmf xhdgo rkseksgl cjfl rksmdgkek.
-
-
-
+ - @Bean 설정을 통해 간단하게 사용 가능하다.
 
   ## **Chapter 37** 어노테이션을 이용하는 스프링 시큐리티 설정
+
+  - xml, java 설정의 경우 매번 필요한 URL에 따라 설정을 변경한는 번거로움이 생긴다.
+  - 스프링 시큐리티 역시 다른 기능들처럼 어노테이션을 이용해 필요한 설정을 추가할 수 있다.
+  - 주로 사용되는 어노테이션
+
+  |어노테이션|설명
+  |--|--
+  |@Secured| 스프링 시큐리티 초키부터사용, ()안에 'ROLE_ADMIN"과 같은 문자열 혹은 문자열 배열을 이용
+  |@PreAuthorize<br>@PostAuthorize|	3버전부터 지원되며, () 안에 표현식을 사용할 수 있으므로 최근에 많이 사용
+
+  ```java
+  @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_MEMBER'")
+	@GetMapping("/annoMember")
+	public void doMember2() {
+		log.info("logined annotation member");
+	}
+	
+	@Secured({"ROLE_ADMIN"})
+	@GetMapping("/annoAdmin")
+	public void doAdmin2() {
+		log.info("admin annotation only");
+	}
+  ```
+
+  - @PreAuthorize는 표현식으로 'hasAnyRole'을 사용해 체크하고, @Secured는 단순 값(value)로 처리한다.
+  - @Secured 여러개 사용할 경우 배열로 표현한다.
+  - 주의점 : 컨트롤러에서 사용하는 스프링 시큐리티의 어노테이션을 활성화하기 위해서는 security-context.xml이 아니느 스프링 MVC의 설정을 담당하는 servlet-context.xml에 관련 설정이 추가된다.
+
   ## **Chapter 38** 기존 프로젝트에 스프링 시큐리티 접목하기
    - 기존 프로젝트에 스프링 시큐리티를 접목하는 작업 순서
 	1. 로그인과 회원 가입 페이지의 작성
 	1. 기존 화면과 컨트롤러에 시큐리티 관련 내용 추가
 	1. Ajax 부분의 변경
+
+ - 스프링 시큐리티는 기본적으로 로그인 후 처리를 SavedRequestAwareAuthenticationSuccessHandler라는 클래스를 이용한다.
+	- 해당 클래스는 사용자가 원래 보려고 했던 페이지의 정보를 유지해서 로그인 후 다신 원했던 페이지로 이동하는 방식이다.
+	- 위 클래스를 이용하는 설정은 기존의 xml,java설정에서 사용한 authentication-success-handler-ref 속성이나 successHandler() 메서드를 삭제하고 관련 스프링 빈의 설정도 사용하지 않도록 해야 한다.
+
+ ### 38.3 게시물 조회와 로그인 처리
+ ```jsp
+<sec:authentication property="principal" var="pinfo"/>
+<sec:authorize access="isAuthenticated()">
+	<c:if test="${pinfo.username eq board.writer}">
+		<button data-oper='modify' class="btn btn-default" onclick="location.href='/board/modify?bno=<c:out value="${board.bno}"/>'">Modify Button</button>
+	</c:if>
+</sec:authorize>
+ ```
+ - \<sec:authentication>를 매번 사용하기 불편하기에 pinfo라는 변수로 선언한다.
+ - \<sec:authorize>는 인증받은 사용자만이 영향을 받ㄷ기 위해 지정한다.
+ - pinfo.username과 작성자를 비교해 버튼처리를한다.
+
+ ### 38.4 게시물의 수정/삭제
+
+  - BoardController 제어
+	- 메서드 실행 전 로그인한 사용자와 현재 파라미터로 전달되는 작성자가 일치하는지 체크한다.
+	- @PreAuthorize의 경우 문자열로 표현식 지정할 수 있는데 이때 컨트롤러에서 전달되는 파라미터를 같이 사용할 수 있기에 유용하다
+	```java
+	// 삭제
+	@PreAuthorize("principal.username == #writer")
+	// 수정
+	@PreAuthorize("principal.username == #board.writer")
+	```
+ ### 38.5 Ajax와 스프리 시큐리티 처리
+  -  스프링 시큐리티가 적용되면 POST, PUT, PATCH, DELETE와 같은 방십ㄱ으로 데이터를 전송하는 경우 반드시 추가적으로 'X-CSRF-TOKEN'와 같은 헤더 정보를 추가해서 CSRF 토큰값을 전달하도록 수정해야 한다.
+  ```jsp
+var csrfHeaderName = "${_csrf.headerName}";
+var csrfTokenValue = "${_csrf.token}";
+
+...생략
+	
+	$.ajax({
+		url : '/uploadAjaxAction',
+		processData : false,
+		contentType : false,
+		beforeSend: function(xhr){
+			xhr.setRequestHeadr(csrfHeaderName, csrfTokenValue);
+		},
+  ```
+
+- 서버 쪽에서 어노테이션등일 이용해 업로드시 보안을 확인할 수 있다.
+- 첨부파일의 등록과 삭제는 외부에서 로그인한 사용자만이 할 수 있도록 제한한다.
+- 메서드에 설정
+```java
+	@PreAuthorize("isAuthenticated()")
+	@PostMapping("/deleteFile")
+	@ResponseBody
+	public ResponseEntity<String> deleteFile(String fileName, String type){
+```
+
+### 38.5.1 댓글 기능에서의 Ajax
+
+- 댓글의 경우 모든 동작이 Ajax를 통해 이루어지기 때문에 화면과 서버 쪽에 수정되어야 할부분이 꽤 있다.
+- 서버
+	- 댓글의 등록 : 로그인한 사용자만이 댓글을 추가할 수 있도록 한다.
+	- 댓글의 수정과 삭제 : 로그인한 사용자의 댓글 작성자의 아이디를 비교해서 같은 경우에만 댓글을 수정/삭제 할 수 있도록 한다.
+- 화면
+	- 댓글의 등록 : CSRF 토큰을 같이 전송하도록 수정
+	- 댓글의 수정과 삭제 : 기존의 댓글 삭제에는 댓글 번호만으로 처리하였는데, 서버 쪽에서 사용할 것이므로 댓글 작성자를 같이 전송하도록 수정
+
+```jsp
+var replyer = null;
+
+<sec:authorize access="isAuthenticated()">
+replyer = '<sec:authentication property="principal.username"/>';
+</sec:authorize>
+
+```
+- JavaScript에서 위와같이 처리한다. 에러처럼 표시될수도 있지만 실제로는 정상 작동하는 코드이다.
+
+## **Chapter 39** 로그아웃 처리
